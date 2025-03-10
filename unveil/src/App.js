@@ -1,13 +1,11 @@
 import React from 'react';
 import Button from '@mui/material/Button';
+import RequestToSignUp from './views/RequestToSignUp/RequestToSignUp';
 
 const App = () => {
   return (
     <div>
-      <h1>Welcome to Material UI</h1>
-      <Button variant="contained" color="primary">
-        Click Me
-      </Button>
+      <RequestToSignUp/>
     </div>
   );
 };
