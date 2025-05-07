@@ -2,25 +2,30 @@ import { Grid, Box, Typography, TextField, MenuItem, Select, FormControl, Checkb
 import { useState, Fragment } from "react";
 import * as Yup from 'yup';
 import { Formik } from 'formik';
+import { useEffect } from 'react';
+import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 
 export default function TwoPartLayout() {
-  const [selectedOptions, setSelectedOptions] = useState([]);
-  const options = ["Option 1", "Option 2", "Option 3", "Option 4"];
+  const [options, setOptions] = useState([]);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const handleChange = (event) => {
-    setSelectedOptions(event.target.value);
-  };
+  useEffect(() => {
+    async function fetchEventTypes() {
+      try {
+        const response = await fetch("http://localhost:3000/api/eventTypes");
+        const data = await response.json();
+        setOptions(data);
+      } catch (error) {
+        console.error('Error fetching event types:', error);
+      }
+    }
+    fetchEventTypes();
+  }, []);
 
-  const [submitSData, setSubmitData] = useState({
-    organizationName: '',
-    contactNumber: '',
-    email: '',
-    address: '',
-    description: '',
-    eventTypeID: []
-  })
-
-  async function saveData(values, { setSubmitting }) {
+  async function saveData(values, { setSubmitting, resetForm }) {
     try {
       const model = {
         organizationName: values.organizationName,
@@ -30,30 +35,32 @@ export default function TwoPartLayout() {
         description: values.description,
         eventTypeID: values.eventTypeID
       };
-  
+
       console.log("Submitting Data:", model);
 
-      const response = await fetch("https://your-api-endpoint.com/save", {
+      const response = await fetch("http://localhost:3000/api/requestToRegister", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(model),
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to submit data");
       }
-  
+
       const result = await response.json();
       console.log("Submission Success:", result);
-  
-      alert("Form submitted successfully!");
+
+      setSuccessMessage("✅ Form submitted successfully!");
+      setSuccessDialogOpen(true);
+
+      resetForm();
     } catch (error) {
       console.error("Submission Error:", error);
-      alert("Error submitting form. Please try again.");
-    } finally {
-      setSubmitting(false);
+      setErrorMessage(error.message || "Error submitting form. Please try again.");
+      setErrorDialogOpen(true);
     }
   }
   
@@ -75,12 +82,16 @@ export default function TwoPartLayout() {
           email: Yup.string().email('Invalid Email').required('Email is Required'),
           address: Yup.string().required('Address is Required'),
           description: Yup.string().required('Description is Required'),
+          eventTypeID: Yup.array()
+            .min(1, 'At least one Event Type must be selected')
+            .required('Event Type is required'),
         })}
-        onSubmit={(saveData)}
+        onSubmit={saveData}
       >
         {({ errors, handleBlur, handleSubmit, touched, values, setFieldValue, handleChange }) => (
           <form onSubmit={handleSubmit}>
             <Grid container sx={{ minHeight: "100vh", overflow: "hidden" }}>
+              
               {/* Left Side */}
               <Grid item xs={6}>
                 <Box sx={{ bgcolor: "#000000", height: "100%", display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", p: 2 }}>
@@ -99,6 +110,7 @@ export default function TwoPartLayout() {
                 <Box sx={{ bgcolor: "#FDF8F8", height: "100%", p: 8 }}>
                   <Typography variant="h3" gutterBottom>Request to Sign In</Typography>
 
+                  {/* Organization Name */}
                   <Box sx={{ mb: 2 }}>
                     <Typography sx={{ mb: 1, color: "rgb(122, 121, 121)", fontWeight: "bold", fontSize: "18px" }}>Name of the organization</Typography>
                     <TextField
@@ -116,6 +128,7 @@ export default function TwoPartLayout() {
                     />
                   </Box>
 
+                  {/* Contact Number */}
                   <Box sx={{ mb: 2 }}>
                     <Typography sx={{ mb: 1, color: "rgb(122, 121, 121)", fontWeight: "bold", fontSize: "18px" }}>Contact Number</Typography>
                     <TextField
@@ -133,6 +146,7 @@ export default function TwoPartLayout() {
                     />
                   </Box>
 
+                  {/* Email */}
                   <Box sx={{ mb: 2 }}>
                     <Typography sx={{ mb: 1, color: "rgb(122, 121, 121)", fontWeight: "bold", fontSize: "18px" }}>E-mail</Typography>
                     <TextField
@@ -150,6 +164,7 @@ export default function TwoPartLayout() {
                     />
                   </Box>
 
+                  {/* Address */}
                   <Box sx={{ mb: 2 }}>
                     <Typography sx={{ mb: 1, color: "rgb(122, 121, 121)", fontWeight: "bold", fontSize: "18px" }}>Address</Typography>
                     <TextField
@@ -167,6 +182,7 @@ export default function TwoPartLayout() {
                     />
                   </Box>
 
+                  {/* Description */}
                   <Box sx={{ mb: 2 }}>
                     <Typography sx={{ mb: 1, color: "rgb(122, 121, 121)", fontWeight: "bold", fontSize: "18px" }}>Description about organization</Typography>
                     <TextField
@@ -184,25 +200,38 @@ export default function TwoPartLayout() {
                     />
                   </Box>
 
+                  {/* Event types */}
                   <Box sx={{ mt: 2 }}>
-                  <Typography sx={{ mb: 1, color: " rgb(122, 121, 121)", fontWeight: "bold", fontSize: "18px" }}>Event types</Typography>
+                    <Typography sx={{ mb: 1, color: "rgb(122, 121, 121)", fontWeight: "bold", fontSize: "18px" }}>
+                      Event types
+                    </Typography>
                     <FormControl fullWidth>
-                      <Select
-                        multiple
-                        value={selectedOptions}
-                        onChange={handleChange}
-                        size="small"
-                        id="eventTypeID"
-                        sx={{ borderRadius: "10px", "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
-                        renderValue={(selected) => selected.join(", ")}
-                      >
-                        {options.map((option) => (
+                    <Select
+                      multiple
+                      name="eventTypeID"
+                      value={values.eventTypeID}
+                      onChange={(event) => setFieldValue('eventTypeID', event.target.value)}
+                      size="small"
+                      id="eventTypeID"
+                      disabled={options.length === 0} // disable if not loaded yet
+                      renderValue={(selected) => selected.join(", ")}
+                    >
+                      {options.length === 0 ? (
+                        <MenuItem disabled>Loading...</MenuItem>
+                      ) : (
+                        options.map((option) => (
                           <MenuItem key={option} value={option}>
-                            <Checkbox checked={selectedOptions.indexOf(option) > -1} />
+                            <Checkbox checked={values.eventTypeID.indexOf(option) > -1} />
                             <ListItemText primary={option} />
                           </MenuItem>
-                        ))}
-                      </Select>
+                        ))
+                      )}
+                    </Select>
+                      {touched.eventTypeID && errors.eventTypeID && (
+                        <Typography variant="caption" color="error">
+                          {errors.eventTypeID}
+                        </Typography>
+                      )}
                     </FormControl>
                   </Box>
 
@@ -219,6 +248,23 @@ export default function TwoPartLayout() {
                       SUBMIT
                     </Button>
                   </Box>
+
+                  <Dialog
+                    open={successDialogOpen}
+                    onClose={() => setSuccessDialogOpen(false)}
+                  >
+                    <DialogTitle>Success</DialogTitle>
+                    <DialogContent>
+                      <DialogContentText>
+                        {successMessage}
+                      </DialogContentText>
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={() => setSuccessDialogOpen(false)} color="primary">
+                        OK
+                      </Button>
+                    </DialogActions>
+                  </Dialog>
                 </Box>
               </Grid>
             </Grid>

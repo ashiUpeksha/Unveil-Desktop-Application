@@ -5,16 +5,18 @@ import AddNewEvent from "./views/AddNewEvent/AddNewEvent";
 import AddImagesOrVideos from "./views/AddImagesOrVideos/AddImagesOrVideos";
 import ViewEvents from "./views/ViewEvents/ViewEvents";
 import UpdateEvents from "./views/UpdateEvents/UpdateEvents";
+import RequestToSingUp from "./views/RequestToSignUp/RequestToSignUp";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} /> 
+        <Route path="/" element={<HomePage />} />
         <Route path="/addnewevent" element={<AddNewEvent />} /> 
         <Route path="/addimageorvideos" element={<AddImagesOrVideos />} /> 
         <Route path="/viewevents" element={<ViewEvents />} /> 
-        <Route path="/updateevents" element={<UpdateEvents />} />
+        <Route path="/updateevents" element={<UpdateEvents />} /> 
+        {/* <Route path="/" element={<RequestToSingUp />} /> */}
       </Routes>
     </Router>
   );
