@@ -241,14 +241,14 @@ const UpdateEventsPage = () => {
                 color="primary"
                 onClick={() => navigate('/addimageorvideos')}
               >
-                Add Images or Videos
+                Show Images or Videos
               </Button>
             </Box>
 
             {/* Submit Button */}
             <Box sx={{ gridColumn: "span 3", textAlign: "right", mt: 2 }}>
               <Button variant="contained" color="primary" type="submit">
-                Submit
+                UPDATE
               </Button>
             </Box>
           </Box>
