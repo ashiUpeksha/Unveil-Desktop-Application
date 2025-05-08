@@ -8,14 +8,14 @@ const path = require('path');
 // Route to save request
 router.post('/requestToRegister', async (req, res) => {
   try {
-    const { organizationName, contactNumber, email, address, description, eventTypeID } = req.body;
+    const { organizationName, contactNumber, email, address, description, eventTypeID, username, password } = req.body;
 
     const result = await pool.query(
       `INSERT INTO requesttoregister
-        (organization_name, contact_number, email, address, description, event_types)
-       VALUES ($1, $2, $3, $4, $5, $6)
+        (organization_name, contact_number, email, address, description, event_types, username, password)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [organizationName, contactNumber, email, address, description, eventTypeID.join(", ")]
+      [organizationName, contactNumber, email, address, description, eventTypeID.join(", "), username, password]
     );
 
     res.status(201).json({ message: "Organization request saved!", data: result.rows[0] });
@@ -176,5 +176,30 @@ router.post('/addNewEvent', async (req, res) => {
     });
   }
 });
+
+
+router.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    // Check if username and password match a registered request
+    const result = await pool.query(
+      'SELECT * FROM requesttoregister WHERE username = $1 AND password = $2',
+      [username, password]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+
+    // User is authenticated
+    res.status(200).json({ message: 'Login successful', user: result.rows[0] });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 
 module.exports = router;
