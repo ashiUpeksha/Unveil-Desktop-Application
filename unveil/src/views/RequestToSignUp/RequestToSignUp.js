@@ -17,7 +17,7 @@ export default function TwoPartLayout() {
       try {
         const response = await fetch("http://localhost:3000/api/eventTypes");
         const data = await response.json();
-        setOptions(data);
+        setOptions(data); // Store the array of event types with id and name
       } catch (error) {
         console.error('Error fetching event types:', error);
       }
@@ -33,7 +33,9 @@ export default function TwoPartLayout() {
         email: values.email,
         address: values.address,
         description: values.description,
-        eventTypeID: values.eventTypeID
+        eventTypeID: values.eventTypeID,
+        username: values.username, 
+        password: values.password
       };
 
       console.log("Submitting Data:", model);
@@ -74,17 +76,29 @@ export default function TwoPartLayout() {
           email: '',
           address: '',
           description: '',
-          eventTypeID: []
+          eventTypeID: [],
+          username: '',
+          password: '',
+          confirmPassword: '',
         }}
         validationSchema={Yup.object().shape({
           organizationName: Yup.string().required('Organization Name is Required'),
-          contactNumber: Yup.string().matches(/^[0-9]+$/, "Must be only digits").required('Contact Number is Required'),
+          contactNumber: Yup.string()
+            .matches(/^[0-9]+$/, "Must be only digits")
+            .required('Contact Number is Required'),
           email: Yup.string().email('Invalid Email').required('Email is Required'),
           address: Yup.string().required('Address is Required'),
           description: Yup.string().required('Description is Required'),
           eventTypeID: Yup.array()
             .min(1, 'At least one Event Type must be selected')
             .required('Event Type is required'),
+          username: Yup.string().required('Username is Required'),
+          password: Yup.string()
+            .min(6, 'Password must be at least 6 characters')
+            .required('Password is Required'),
+          confirmPassword: Yup.string()
+            .oneOf([Yup.ref('password'), null], 'Passwords must match')
+            .required('Confirm Password is Required'),
         })}
         onSubmit={saveData}
       >
@@ -233,6 +247,62 @@ export default function TwoPartLayout() {
                         </Typography>
                       )}
                     </FormControl>
+                  </Box>
+
+                  {/* Username */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography sx={{ mb: 1, color: "rgb(122, 121, 121)", fontWeight: "bold", fontSize: "18px" }}>Username</Typography>
+                    <TextField
+                      fullWidth
+                      name="username"
+                      placeholder="Enter your Username"
+                      value={values.username}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={Boolean(touched.username && errors.username)}
+                      helperText={touched.username && errors.username}
+                      variant="outlined"
+                      size="small"
+                      sx={{ borderRadius: "10px", "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                    />
+                  </Box>
+
+                  {/* Password */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography sx={{ mb: 1, color: "rgb(122, 121, 121)", fontWeight: "bold", fontSize: "18px" }}>Password</Typography>
+                    <TextField
+                      fullWidth
+                      name="password"
+                      type="password"
+                      placeholder="Enter your Password"
+                      value={values.password}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={Boolean(touched.password && errors.password)}
+                      helperText={touched.password && errors.password}
+                      variant="outlined"
+                      size="small"
+                      sx={{ borderRadius: "10px", "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                    />
+                  </Box>
+
+                  {/* Confirm Password */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography sx={{ mb: 1, color: "rgb(122, 121, 121)", fontWeight: "bold", fontSize: "18px" }}>Confirm Password</Typography>
+                    <TextField
+                      fullWidth
+                      name="confirmPassword"
+                      type="password"
+                      placeholder="Confirm your Password"
+                      value={values.confirmPassword}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={Boolean(touched.confirmPassword && errors.confirmPassword)}
+                      helperText={touched.confirmPassword && errors.confirmPassword}
+                      variant="outlined"
+                      size="small"
+                      sx={{ borderRadius: "10px", "& .MuiOutlinedInput-root": { borderRadius: "10px" } }}
+                    />
                   </Box>
 
                   {/* Submit Button */}
