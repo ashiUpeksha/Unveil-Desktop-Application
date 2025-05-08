@@ -6,17 +6,21 @@ import AddImagesOrVideos from "./views/AddImagesOrVideos/AddImagesOrVideos";
 import ViewEvents from "./views/ViewEvents/ViewEvents";
 import UpdateEvents from "./views/UpdateEvents/UpdateEvents";
 import RequestToSingUp from "./views/RequestToSignUp/RequestToSignUp";
+import Login from "./views/LoginPage/LoginPage";
+import ResetPassword from "./views/ResetPassword/ResetPassword";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/resetpassword" element={<ResetPassword />} />
         <Route path="/addnewevent" element={<AddNewEvent />} /> 
         <Route path="/addimageorvideos" element={<AddImagesOrVideos />} /> 
         <Route path="/viewevents" element={<ViewEvents />} /> 
         <Route path="/updateevents" element={<UpdateEvents />} /> 
-        {/* <Route path="/" element={<RequestToSingUp />} /> */}
+        <Route path="/register" element={<RequestToSingUp />} /> 
       </Routes>
     </Router>
   );
