@@ -20,7 +20,7 @@ function App() {
         <Route path="/addimageorvideos" element={<AddImagesOrVideos />} /> 
         <Route path="/viewevents" element={<ViewEvents />} /> 
         <Route path="/updateevents" element={<UpdateEvents />} /> 
-        <Route path="/register" element={<RequestToSingUp />} /> 
+        <Route path="/register" element={<RequestToSingUp />} />  
       </Routes>
     </Router>
   );

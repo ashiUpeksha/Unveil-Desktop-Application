@@ -49,6 +49,7 @@ const AddNewEventPage = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+          
 
   const inputStyle = {
     width: '100%',
@@ -102,45 +103,55 @@ const AddNewEventPage = () => {
       try {
         setIsUploading(true);
         
-        // First upload files if any
-        const mediaUrls = [];
-        if (selectedFiles.length > 0) {
-          const formData = new FormData();
-          selectedFiles.forEach(file => {
-            formData.append('media', file);
-          });
-
-          console.log("formData",formData)
-          const uploadResponse = await axios.post(
-            'http://localhost:3000/api/uploadMedia', 
-            formData, 
-            {
-              headers: {
-                'Content-Type': 'multipart/form-data'
-              },
-              onUploadProgress: (progressEvent) => {
-                const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-                setUploadProgress(progress);
-              }
-            }
-          );
-          mediaUrls.push(...uploadResponse.data.urls);
+        const formData = new FormData();
+        selectedFiles.forEach((file) => {
+          formData.append('UploadedFiles[]', file); // Update field name to 'UploadedFiles[]' to match the backend
+        });
+        
+        // Debugging: Log FormData keys and values
+        for (let pair of formData.entries()) {
+          console.log(pair[0] + ':', pair[1]);
         }
-
-        // Then submit event data with media URLs
-        const eventData = {
-          ...values,
-          mediaUrls,
-          startDateTime: values.startDateTime.toISOString(),
-          endDateTime: values.endDateTime.toISOString()
+        console.log("FormData before submission:", formData.getAll('media'));
+        const model = {
+          eventType: values.eventType,
+          eventName: values.eventName,
+          venue: values.venue,
+          startDateTime: values.startDateTime,
+          endDateTime: values.endDateTime,
+          duration: values.duration,
+          entranceFee: values.entranceFee,
+          contactNumber: values.contactNumber,
+          description: values.description,
+          specialGuests: values.specialGuests,
+          UploadedFiles: selectedFiles,
         };
 
-        console.log("eventData",eventData)
+        // Retrieve the token from localStorage
+        const token = localStorage.authToken;
+        console.log("Retrieved token:", model); // Debugging: Log the token
+
+        if (!token) {
+          alert("Authorization token is missing. Please log in again.");
+          navigate("/login"); // Redirect to login page if token is missing
+          return;
+        }
+
         const response = await axios.post(
           "http://localhost:3000/api/addNewEvent", 
-          eventData
+          model, // Use FormData to include files
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              'Authorization': `Bearer ${token}` // Add the Authorization header
+            },
+            onUploadProgress: (progressEvent) => {
+              const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+              setUploadProgress(progress);
+            }
+          }
         );
-        
+
         if (response.data.success) {
           alert(`Event added successfully! Event ID: ${response.data.eventId}`);
           navigate("/events");
@@ -149,7 +160,17 @@ const AddNewEventPage = () => {
         }
       } catch (error) {
         console.error("Error submitting event:", error);
-        alert(error.message || "Failed to add event.");
+
+        // Debugging: Log server response if available
+        if (error.response) {
+          console.error("Server response:", error.response.data);
+        }
+
+        if (error.response && error.response.status === 403) {
+          alert("You are not authorized to perform this action. Please log in again.");
+        } else {
+          alert(error.message || "Failed to add event.");
+        }
       } finally {
         setIsUploading(false);
         setUploadProgress(0);

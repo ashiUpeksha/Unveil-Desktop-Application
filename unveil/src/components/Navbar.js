@@ -17,7 +17,7 @@ const NavBar = () => {
     >
       <Toolbar>
         <Box sx={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
-          <Link to="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          <Link to="/home" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
             <img
               src="/static/logo.png"
               alt="Unveil Logo"

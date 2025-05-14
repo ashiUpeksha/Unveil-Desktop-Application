@@ -1,8 +1,8 @@
-import { Grid, Box, Typography, TextField, Button, Link, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Grid, Link, TextField, Typography } from "@mui/material";
 import { Formik } from "formik";
-import * as Yup from "yup";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom"; // Assuming you're using React Router
+import * as Yup from "yup";
 
 export default function LoginPage() {
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
@@ -33,7 +33,11 @@ export default function LoginPage() {
 
       const result = await response.json();
       console.log("Login Success:", result);
-
+      
+      // Store JWT token and user info in localStorage
+      localStorage.setItem('authToken', result.token);
+      localStorage.setItem('user', JSON.stringify(result.user)); // Ensure userId is stored
+      
       // Redirect to HomePage on successful login
       navigate("/home"); 
     } catch (error) {
