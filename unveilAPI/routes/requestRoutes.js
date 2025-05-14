@@ -4,18 +4,29 @@ const pool = require('../db'); // we'll create this db.js file next
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+require('dotenv').config(); 
+const authenticateToken = require('../middleware/auth'); // Import middleware
 
-// Route to save request
+
+// Protected route test: shows user info if token is valid
+router.get('/views/AddNewEvent/AddNewEvent', authenticateToken, (req, res) => {
+  res.json({ message: 'You are allowed!', user: req.user });   // ✅ Shows data decoded from token
+});
+
+// Route to save request (no token required)
 router.post('/requestToRegister', async (req, res) => {
   try {
     const { organizationName, contactNumber, email, address, description, eventTypeID, username, password } = req.body;
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      `INSERT INTO requesttoregister
+      `INSERT INTO users
         (organization_name, contact_number, email, address, description, event_types, username, password)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [organizationName, contactNumber, email, address, description, eventTypeID.join(", "), username, password]
+      [organizationName, contactNumber, email, address, description, eventTypeID.join(", "), username, hashedPassword]
     );
 
     res.status(201).json({ message: "Organization request saved!", data: result.rows[0] });
@@ -37,17 +48,24 @@ router.get('/eventTypes', async (req, res) => {
   }
 });
 
-// Configure multer storage
+// File upload config
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    // Temporary upload folder (will move files after getting event ID)
-    cb(null, 'uploads/temp/');
+    const tempDir = path.join(__dirname, '../uploads/temp');
+    
+    // Ensure the directory exists
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
+    }
+
+    cb(null, tempDir); // Set the destination to the temp directory
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname));
   }
 });
 
+// Update multer configuration to handle both event data and files
 const upload = multer({ 
   storage: storage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
@@ -61,7 +79,7 @@ const upload = multer({
     }
     cb(new Error('Only .jpeg, .jpg, .png, .pdf, and .mp4 files are allowed'));
   }
-}).array('media', 10); // Allow up to 10 files
+}).array('UploadedFiles[]', 10); // Update field name to 'UploadedFiles[]' to match the frontend
 
 // Modified uploadMedia endpoint
 router.post('/uploadMedia', (req, res) => {
@@ -85,115 +103,183 @@ router.post('/uploadMedia', (req, res) => {
   });
 });
 
-
 // Modified addNewEvent endpoint
-router.post('/addNewEvent', async (req, res) => {
-  try {
-    const {
-      eventType,
-      eventName,
-      venue,
-      startDateTime,
-      endDateTime,
-      duration,
-      entranceFee,
-      contactNumber,
-      description,
-      specialGuests,
-      mediaUrls = []
-    } = req.body;
+router.post('/addNewEvent', authenticateToken, (req, res) => {
+  upload(req, res, async function (err) {
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(400).json({ error: err.message });
+    }
 
-    // First insert the event to get the ID
-    const result = await pool.query(
-      `INSERT INTO addnewevent (
-        event_type, 
-        event_name, 
-        event_venue, 
-        event_start_date, 
-        event_start_time, 
-        event_end_date, 
-        event_end_time, 
-        event_duration, 
-        entrance_fee, 
-        contact_number, 
-        description, 
-        special_guests
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-      RETURNING event_id`,
-      [
+    // Debugging: Log the parsed request body and files
+    console.log("Request body:", req.body);
+    console.log("Uploaded files:", req.files);
+
+    try {
+      const userId = req.user.userId; // Extract userId from the JWT token
+      console.log('User ID from token:', userId); // Debugging: Log the userId
+      if (!userId) {
+        return res.status(403).json({ error: "Unauthorized: Invalid token" });
+      }
+
+      const {
         eventType,
         eventName,
         venue,
-        new Date(startDateTime).toISOString().split('T')[0],
-        new Date(startDateTime).toTimeString().split(' ')[0],
-        new Date(endDateTime).toISOString().split('T')[0],
-        new Date(endDateTime).toTimeString().split(' ')[0],
+        startDateTime,
+        endDateTime,
         duration,
         entranceFee,
         contactNumber,
         description,
         specialGuests
-      ]
-    );
+      } = req.body;
 
-    const eventId = result.rows[0].event_id;
-    const eventFolder = path.join(__dirname, '../../public/event_Image', eventId.toString());
+      // Validate date inputs
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
 
-    // Create event folder if it doesn't exist
-    if (!fs.existsSync(eventFolder)) {
-      fs.mkdirSync(eventFolder, { recursive: true });
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ error: "Invalid date format for startDateTime or endDateTime" });
+      }
+
+      // Format dates
+      const formattedStartDate = startDate.toISOString().split('T')[0];
+      const formattedStartTime = startDate.toTimeString().split(' ')[0];
+      const formattedEndDate = endDate.toISOString().split('T')[0];
+      const formattedEndTime = endDate.toTimeString().split(' ')[0];
+
+      // Insert event data into the database
+      const result = await pool.query(
+        `INSERT INTO addnewevent (
+          event_type, 
+          event_name, 
+          event_venue, 
+          event_start_date, 
+          event_start_time, 
+          event_end_date, 
+          event_end_time, 
+          event_duration, 
+          entrance_fee, 
+          contact_number, 
+          description, 
+          special_guests,
+          created_by
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        RETURNING event_id`,
+        [
+          eventType,
+          eventName,
+          venue,
+          formattedStartDate,
+          formattedStartTime,
+          formattedEndDate,
+          formattedEndTime,
+          duration,
+          entranceFee,
+          contactNumber,
+          description,
+          specialGuests,
+          userId // Use userId from the token as createdBy
+        ]
+      );
+
+      const eventId = result.rows[0].event_id;
+      const eventFolder = path.join(__dirname, '../../public/event_Image', eventId.toString());
+
+      // Create event folder if it doesn't exist
+      if (!fs.existsSync(eventFolder)) {
+        fs.mkdirSync(eventFolder, { recursive: true });
+      }
+
+      // Process uploaded files
+      const finalMediaUrls = [];
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const oldPath = file.path; // Temporary path from upload
+          const newPath = path.join(eventFolder, file.filename);
+
+          // Move file from temp to event folder
+          fs.renameSync(oldPath, newPath);
+
+          // Store relative path in database
+          finalMediaUrls.push(`event_Image/${eventId}/${file.filename}`);
+        }
+      }
+
+      // Update event with final media URLs
+      for (const mediaUrl of finalMediaUrls) {
+        await pool.query(
+          'INSERT INTO eventimage (event_id, images_and_videos, created_by) VALUES ($1, $2, $3)',
+          [eventId, mediaUrl, userId]
+        );
+      }
+
+      res.status(201).json({ 
+        success: true,
+        message: "Event added successfully!",
+        eventId: eventId,
+        mediaUrls: finalMediaUrls
+      });
+    } catch (error) {
+      console.error('Error adding event:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Internal server error' 
+      });
     }
-
-    // Process uploaded files
-    const finalMediaUrls = [];
-    for (const media of mediaUrls) {
-      const oldPath = media.path; // Temporary path from upload
-      const newPath = path.join(eventFolder, media.filename);
-
-      // Move file from temp to event folder
-      fs.renameSync(oldPath, newPath);
-
-      // Store relative path in database
-      finalMediaUrls.push(`/event_Image/${eventId}/${media.filename}`);
-    }
-
-    // Update event with final media URLs
-    await pool.query(
-      'UPDATE addnewevent SET images_and_videos = $1 WHERE event_id = $2',
-      [finalMediaUrls.join(', '), eventId]
-    );
-
-    res.status(201).json({ 
-      success: true,
-      message: "Event added successfully!",
-      eventId: eventId
-    });
-  } catch (error) {
-    console.error('Error adding event:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Internal server error' 
-    });
-  }
+  });
 });
 
-
+/* Login */
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // Check if username and password match a registered request
+    // Get user by username
     const result = await pool.query(
-      'SELECT * FROM requesttoregister WHERE username = $1 AND password = $2',
-      [username, password]
+      'SELECT * FROM users WHERE username = $1',
+      [username]
     );
 
+    // Check if user exists
     if (result.rows.length === 0) {
       return res.status(401).json({ message: 'Invalid username or password' });
     }
 
-    // User is authenticated
-    res.status(200).json({ message: 'Login successful', user: result.rows[0] });
+    const user = result.rows[0];
+
+    // Compare entered password with hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid username or password' });
+    }
+    // console.log('User found:', user);
+
+    // Generate JWT token with userId included in the payload
+    const token = jwt.sign(
+      { 
+        userId: user.user_id, // Include userId in the token payload
+        username: user.username,
+        email: user.email,
+        organization: user.organization_name
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }  // Token lifetime
+    );
+
+    // Include userId explicitly in the user object returned to the frontend
+    res.status(200).json({ 
+      message: 'Login successful', 
+      user: { 
+        id: user.user_id,  // Ensure userId is included
+        userId: user.user_id, // Add userId explicitly
+        username: user.username, 
+        email: user.email,
+        organization: user.organization_name 
+      }, 
+      token 
+    });
 
   } catch (error) {
     console.error('Login error:', error);
