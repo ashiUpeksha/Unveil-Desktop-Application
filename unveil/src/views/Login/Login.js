@@ -246,11 +246,22 @@ const AddNewEventPage = () => {
   ];
 
   return (
-    <Box sx={{ display: "flex" }}>
+    <Box sx={{ display: "flex", width: "100vw", minHeight: "100vh", overflowX: "hidden" }}>
       <Navbar />
       <Sidebar />
-      <Box component="main" sx={{ flexGrow: 1, backgroundColor: "#C6C6C6", p: 3, mt: 8, minHeight: "100vh" }}>
-        <Box sx={{ backgroundColor: "white", p: 3, borderRadius: 2, boxShadow: 3 }}>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: "100vw",
+          backgroundColor: "#C6C6C6",
+          p: 3,
+          mt: 8,
+          minHeight: "100vh",
+          overflowX: "auto"
+        }}
+      >
+        <Box sx={{ backgroundColor: "white", p: 3, borderRadius: 2, boxShadow: 3, width: "100%" }}>
           <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Add New Event</Typography>
 
           <form onSubmit={formik.handleSubmit}>

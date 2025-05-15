@@ -40,6 +40,7 @@ const validationSchema = Yup.object({
     .matches(/^[0-9]+$/, "Must be only digits")
     .required("Required"),
   description: Yup.string().required("Required"),
+  venueAddress: Yup.string().required("Event venue address is required"), 
 });
 
 const AddNewEventPage = () => {
@@ -97,6 +98,7 @@ const AddNewEventPage = () => {
       contactNumber: "",
       description: "",
       specialGuests: "",
+      venueAddress: "", 
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -125,6 +127,7 @@ const AddNewEventPage = () => {
           description: values.description,
           specialGuests: values.specialGuests,
           UploadedFiles: selectedFiles,
+          venueAddress: values.venueAddress, 
         };
 
         // Retrieve the token from localStorage
@@ -347,6 +350,7 @@ const AddNewEventPage = () => {
                 )}
               </Box>
 
+              {/* Entrance Fee */}
               <Box>
                 <Typography variant="subtitle1">Entrance Fee</Typography>
                 <input
@@ -363,6 +367,7 @@ const AddNewEventPage = () => {
                 )}
               </Box>
 
+              {/* Contact Number */}
               <Box>
                 <Typography variant="subtitle1">Contact Number</Typography>
                 <input
@@ -379,8 +384,25 @@ const AddNewEventPage = () => {
                 )}
               </Box>
 
-              {/* Description Field */}
-              <Box sx={{ mb: 2, gridColumn: { xs: "span 1", sm: "span 3" } }}>
+              {/* Empty box to fill the third column in this row */}
+              <Box />
+
+              {/* New row: Event Venue Address, Description, Special Guests */}
+              <Box>
+                <Typography variant="subtitle1">Event Venue Address</Typography>
+                <textarea
+                  name="venueAddress"
+                  placeholder="Address of the event venue"
+                  value={formik.values.venueAddress || ""}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  style={textareaStyle}
+                />
+                {formik.touched.venueAddress && formik.errors.venueAddress && (
+                  <div style={{ color: "red", fontSize: "0.8rem" }}>{formik.errors.venueAddress}</div>
+                )}
+              </Box>
+              <Box>
                 <Typography variant="subtitle1">Description</Typography>
                 <textarea
                   name="description"
@@ -394,9 +416,7 @@ const AddNewEventPage = () => {
                   <div style={{ color: "red", fontSize: "0.8rem" }}>{formik.errors.description}</div>
                 )}
               </Box>
-
-              {/* Special Guests Field */}
-              <Box sx={{ mb: 2, gridColumn: { xs: "span 1", sm: "span 3" } }}>
+              <Box>
                 <Typography variant="subtitle1">Special Guests</Typography>
                 <textarea
                   name="specialGuests"

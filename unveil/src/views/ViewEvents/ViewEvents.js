@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import Box from "@mui/material/Box";
@@ -16,29 +16,38 @@ import Paper from "@mui/material/Paper";
 import { useNavigate } from "react-router-dom";
 
 const ViewEvents = () => {
+  const [userId, setUserId] = useState(""); 
+  const [eventData, setEventData] = useState([]);
+  const [eventTypes, setEventTypes] = useState([]);
   const navigate = useNavigate();
 
-  // Sample event data
-  const eventData = [
-    {
-      type: "Beach party",
-      name: "ABC",
-      date: "2025.04.12",
-      venue: "LMN hotel",
-    },
-    {
-      type: "Musical",
-      name: "XYZ",
-      date: "2025.05.13",
-      venue: "Galle fort",
-    },
-    {
-      type: "Food festival",
-      name: "Happy",
-      date: "2025.03.14",
-      venue: "Galle fort",
-    },
-  ];
+  useEffect(() => {
+    // Parse localStorage.user as JSON
+    const userObj = JSON.parse(localStorage.user || "{}");
+    setUserId(userObj.userId || "");
+
+    // Fetch events for this user
+    if (userObj.userId) {
+      fetch(`http://localhost:3000/api/events?userId=${userObj.userId}`)
+        .then(res => res.json())
+        .then(data => {
+          setEventData(data.events || []);
+        })
+        .catch(err => {
+          console.error("Failed to fetch events:", err);
+          setEventData([]);
+        });
+    }
+
+    // Fetch event types from backend
+    fetch("http://localhost:3000/api/eventTypes")
+      .then(res => res.json())
+      .then(data => setEventTypes(data || []))
+      .catch(err => {
+        console.error("Failed to fetch event types:", err);
+        setEventTypes([]);
+      });
+  }, []);
 
   const handleEdit = (event) => {
     navigate("/updateevents", { state: { event } });
@@ -89,10 +98,10 @@ const ViewEvents = () => {
               {
                 label: "Event Type",
                 type: "select",
-                options: ["Music", "Art", "Tech", "Food"],
+                options: eventTypes, // <-- use fetched event types
               },
               { label: "Event Name", type: "text", placeholder: "Event Name" },
-              { label: "Date", type: "date" },
+              { label: "Start Date", type: "date" },
             ].map((field, index) => (
               <Box key={index} sx={{ mb: 1 }}>
                 <Typography variant="subtitle1" gutterBottom>
@@ -145,7 +154,7 @@ const ViewEvents = () => {
                       <strong>Event Name</strong>
                     </TableCell>
                     <TableCell>
-                      <strong>Date</strong>
+                      <strong>Start Date</strong>
                     </TableCell>
                     <TableCell>
                       <strong>Venue</strong>
@@ -156,26 +165,39 @@ const ViewEvents = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {eventData.map((event, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{event.type}</TableCell>
-                      <TableCell>{event.name}</TableCell>
-                      <TableCell>{event.date}</TableCell>
-                      <TableCell>{event.venue}</TableCell>
-                      <TableCell>
-                        <IconButton
-                          color="primary"
-                          aria-label="edit"
-                          onClick={() => handleEdit(event)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton color="error" aria-label="delete">
-                          <DeleteIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {eventData.map((event, index) => {
+                    let displayDate = "";
+                    if (event.event_start_date) {
+                      // Always use the first 10 characters if it's a string (YYYY-MM-DD)
+                      if (typeof event.event_start_date === "string") {
+                        displayDate = event.event_start_date.substring(0, 10);
+                      } else {
+                        // If it's a Date object or something else, fallback to toString
+                        displayDate = event.event_start_date.toString().substring(0, 10);
+                      }
+                    }
+                    // If you want to force UTC and avoid timezone shift, do NOT use new Date()
+                    return (
+                      <TableRow key={index}>
+                        <TableCell>{event.event_type}</TableCell>
+                        <TableCell>{event.event_name}</TableCell>
+                        <TableCell>{displayDate}</TableCell>
+                        <TableCell>{event.event_venue}</TableCell>
+                        <TableCell>
+                          <IconButton
+                            color="primary"
+                            aria-label="edit"
+                            onClick={() => handleEdit(event)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton color="error" aria-label="delete">
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>
