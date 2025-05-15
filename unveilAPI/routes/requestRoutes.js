@@ -132,7 +132,8 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
         entranceFee,
         contactNumber,
         description,
-        specialGuests
+        specialGuests,
+        venueAddress // <-- get from req.body
       } = req.body;
 
       // Validate date inputs
@@ -155,6 +156,7 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
           event_type, 
           event_name, 
           event_venue, 
+          event_venue_address,  
           event_start_date, 
           event_start_time, 
           event_end_date, 
@@ -165,12 +167,13 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
           description, 
           special_guests,
           created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING event_id`,
         [
           eventType,
           eventName,
           venue,
+          venueAddress,
           formattedStartDate,
           formattedStartTime,
           formattedEndDate,
@@ -229,6 +232,21 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
       });
     }
   });
+});
+
+// New endpoint to get events by userId
+router.get('/events', async (req, res) => {
+  const userId = req.query.userId;
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+  try {
+    const result = await pool.query(
+      'SELECT * FROM addnewevent WHERE created_by = $1 ORDER BY event_id DESC',
+      [userId]
+    );
+    res.json({ events: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
 });
 
 /* Login */
