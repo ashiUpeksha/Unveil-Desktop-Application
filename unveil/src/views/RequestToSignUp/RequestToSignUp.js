@@ -4,6 +4,7 @@ import * as Yup from 'yup';
 import { Formik } from 'formik';
 import { useEffect } from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function TwoPartLayout() {
   const [options, setOptions] = useState([]);
@@ -11,6 +12,7 @@ export default function TwoPartLayout() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successDialogOpen, setSuccessDialogOpen] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchEventTypes() {
@@ -318,6 +320,29 @@ export default function TwoPartLayout() {
                       SUBMIT
                     </Button>
                   </Box>
+
+                  <Typography textAlign="center" sx={{ mt: 4 }}>
+                    Already have an account?{" "}
+                    <Link
+                      to="/"
+                      component="button"
+                      underline="hover"
+                      sx={{
+                        color: "rgb(25, 118, 210)",
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        font: "inherit",
+                        cursor: "pointer"
+                      }}
+                      onClick={e => {
+                        e.preventDefault();
+                        navigate("/");
+                      }}
+                    >
+                      Login to the account
+                    </Link>
+                  </Typography>
 
                   <Dialog
                     open={successDialogOpen}

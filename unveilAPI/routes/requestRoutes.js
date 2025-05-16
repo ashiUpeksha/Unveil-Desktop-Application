@@ -48,6 +48,16 @@ router.get('/eventTypes', async (req, res) => {
   }
 });
 
+// Route to get all user types
+router.get('/userTypes', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT user_type_id, user_type FROM usertypes WHERE is_active = true');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch user types" });
+  }
+});
+
 // File upload config
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
