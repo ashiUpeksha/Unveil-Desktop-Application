@@ -19,6 +19,11 @@ const ViewEvents = () => {
   const [userId, setUserId] = useState(""); 
   const [eventData, setEventData] = useState([]);
   const [eventTypes, setEventTypes] = useState([]);
+  const [filters, setFilters] = useState({
+    eventType: "",
+    eventName: "",
+    startDate: "",
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,6 +57,34 @@ const ViewEvents = () => {
   const handleEdit = (event) => {
     navigate("/updateevents", { state: { event } });
   };
+
+  // Handle filter changes
+  const handleFilterChange = (field, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  // Filtered events based on filters
+  const filteredEvents = eventData.filter(event => {
+    // Event Type filter
+    if (filters.eventType && event.event_type !== filters.eventType) return false;
+    // Event Name filter (case-insensitive substring match)
+    if (
+      filters.eventName &&
+      !event.event_name?.toLowerCase().includes(filters.eventName.toLowerCase())
+    )
+      return false;
+    // Start Date filter (compare only date part)
+    if (
+      filters.startDate &&
+      (!event.event_start_date ||
+        event.event_start_date.substring(0, 10) !== filters.startDate)
+    )
+      return false;
+    return true;
+  });
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -94,51 +127,67 @@ const ViewEvents = () => {
               gap: 2,
             }}
           >
-            {[ 
-              {
-                label: "Event Type",
-                type: "select",
-                options: eventTypes, // <-- use fetched event types
-              },
-              { label: "Event Name", type: "text", placeholder: "Event Name" },
-              { label: "Start Date", type: "date" },
-            ].map((field, index) => (
-              <Box key={index} sx={{ mb: 1 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  {field.label}
-                </Typography>
-                {field.type === "select" ? (
-                  <select
-                    style={{
-                      width: "90%",
-                      padding: "10px",
-                      borderRadius: "5px",
-                      border: "1px solid #ccc",
-                      marginTop: "5px",
-                    }}
-                  >
-                    <option value="">-Select event type-</option>
-                    {field.options.map((opt, i) => (
-                      <option key={i} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type={field.type}
-                    placeholder={field.placeholder || ""}
-                    style={{
-                      width: "90%",
-                      padding: "10px",
-                      borderRadius: "5px",
-                      border: "1px solid #ccc",
-                      marginTop: "5px",
-                    }}
-                  />
-                )}
-              </Box>
-            ))}
+            {/* Event Type */}
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Event Type
+              </Typography>
+              <select
+                style={{
+                  width: "90%",
+                  padding: "10px",
+                  borderRadius: "5px",
+                  border: "1px solid #ccc",
+                  marginTop: "5px",
+                }}
+                value={filters.eventType}
+                onChange={e => handleFilterChange("eventType", e.target.value)}
+              >
+                <option value="">-Select event type-</option>
+                {eventTypes.map((opt, i) => (
+                  <option key={i} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </Box>
+            {/* Event Name */}
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Event Name
+              </Typography>
+              <input
+                type="text"
+                placeholder="Event Name"
+                style={{
+                  width: "90%",
+                  padding: "10px",
+                  borderRadius: "5px",
+                  border: "1px solid #ccc",
+                  marginTop: "5px",
+                }}
+                value={filters.eventName}
+                onChange={e => handleFilterChange("eventName", e.target.value)}
+              />
+            </Box>
+            {/* Start Date */}
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Start Date
+              </Typography>
+              <input
+                type="date"
+                style={{
+                  width: "90%",
+                  padding: "10px",
+                  borderRadius: "5px",
+                  border: "1px solid #ccc",
+                  marginTop: "5px",
+                }}
+                value={filters.startDate}
+                onChange={e => handleFilterChange("startDate", e.target.value)}
+              />
+            </Box>
           </Box>
 
           {/* Table of events */}
@@ -165,7 +214,7 @@ const ViewEvents = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {eventData.map((event, index) => {
+                  {filteredEvents.map((event, index) => {
                     let displayDate = "";
                     if (event.event_start_date) {
                       // Always use the first 10 characters if it's a string (YYYY-MM-DD)
