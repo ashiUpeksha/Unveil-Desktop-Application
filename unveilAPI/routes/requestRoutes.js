@@ -249,6 +249,30 @@ router.get('/events', async (req, res) => {
   }
 });
 
+// Get single event by event_id
+router.get('/event/:eventId', async (req, res) => {
+  const { eventId } = req.params;
+  try {
+    const result = await pool.query(
+      'SELECT * FROM addnewevent WHERE event_id = $1',
+      [eventId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    // Optionally, fetch images/videos if needed:
+    const mediaResult = await pool.query(
+      'SELECT images_and_videos FROM eventimage WHERE event_id = $1',
+      [eventId]
+    );
+    const event = result.rows[0];
+    event.media = mediaResult.rows.map(row => row.images_and_videos);
+    res.json(event);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch event" });
+  }
+});
+
 /* Login */
 router.post('/login', async (req, res) => {
   try {
