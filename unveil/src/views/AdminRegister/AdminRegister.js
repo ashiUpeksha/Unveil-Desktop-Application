@@ -7,6 +7,8 @@ import * as Yup from "yup";
 export default function AdminRegister() {
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const [userTypes, setUserTypes] = useState([]);
   const navigate = useNavigate();
 
@@ -18,9 +20,31 @@ export default function AdminRegister() {
       .catch(() => setUserTypes([]));
   }, []);
 
-  async function handleRegister(values, { setSubmitting }) {
-    // Registration logic here (not implemented)
-    setSubmitting(false);
+  async function handleRegister(values, { setSubmitting, resetForm }) {
+    try {
+      const payload = {
+        userType: values.userType,
+        username: values.username,
+        password: values.password
+      };
+      const response = await fetch("http://localhost:3000/api/adminRegister", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Registration failed");
+      }
+      resetForm();
+      setSuccessMessage("✅ Admin registered successfully!");
+      setSuccessDialogOpen(true);
+    } catch (err) {
+      setErrorMessage(err.message || "Registration failed");
+      setErrorDialogOpen(true);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -229,6 +253,18 @@ export default function AdminRegister() {
         )}
       </Formik>
 
+      {/* Success Dialog */}
+      <Dialog open={successDialogOpen} onClose={() => setSuccessDialogOpen(false)}>
+        <DialogTitle>Success</DialogTitle>
+        <DialogContent>
+          <DialogContentText>{successMessage}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSuccessDialogOpen(false)} color="primary">
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
       {/* Error Dialog */}
       <Dialog open={errorDialogOpen} onClose={() => setErrorDialogOpen(false)}>
         <DialogTitle>Error</DialogTitle>
