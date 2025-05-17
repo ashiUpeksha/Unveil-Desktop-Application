@@ -339,5 +339,56 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Admin registration endpoint
+router.post('/adminRegister', async (req, res) => {
+  try {
+    const { userType, username, password } = req.body;
+    if (!userType || !username || !password) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Get user_type_id from usertypes table
+    const typeResult = await pool.query(
+      'SELECT user_type_id FROM usertypes WHERE user_type = $1 AND is_active = true',
+      [userType]
+    );
+    if (typeResult.rows.length === 0) {
+      return res.status(400).json({ error: "Invalid user type" });
+    }
+    const user_type_id = typeResult.rows[0].user_type_id;
+
+    // Check if username already exists
+    const userExists = await pool.query(
+      'SELECT user_id FROM users WHERE username = $1',
+      [username]
+    );
+    if (userExists.rows.length > 0) {
+      return res.status(400).json({ error: "Username already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const insertResult = await pool.query(
+      `INSERT INTO users (
+        user_type_id, username, password)
+      VALUES ($1, $2, $3)
+      RETURNING user_id, user_type_id, username`,
+      [
+        user_type_id,
+        username,
+        hashedPassword
+      ]
+    );
+
+    res.status(201).json({
+      message: "Admin registered successfully",
+      user: insertResult.rows[0]
+    });
+  } catch (err) {
+    console.error('Admin registration error:', err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 module.exports = router;
