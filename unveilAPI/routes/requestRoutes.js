@@ -17,33 +17,60 @@ router.get('/views/AddNewEvent/AddNewEvent', authenticateToken, (req, res) => {
 
 // Route to save request (no token required)
 router.post('/requestToRegister', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { organizationName, contactNumber, email, address, description, eventTypeID, username, password } = req.body;
+    await client.query('BEGIN');
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Set user_type_id = 2 for event organizer
-    const result = await pool.query(
+    // Insert user (user_type_id = 2)
+    const userResult = await client.query(
       `INSERT INTO users
-        (user_type_id, organization_name, contact_number, email, address, description, event_types, username, password)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING *`,
+        (user_type_id, organization_name, contact_number, email, address, description, username, password)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING user_id`,
       [
-        2, // user_type_id for event organizer
+        2,
         organizationName,
         contactNumber,
         email,
         address,
         description,
-        eventTypeID.join(", "),
         username,
         hashedPassword
       ]
     );
+    const userId = userResult.rows[0].user_id;
 
-    res.status(201).json({ message: "Organization request saved!", data: result.rows[0] });
+    // Fetch event_type_ids for selected event type names
+    // Ensure eventTypeID is an array of event type names
+    let eventTypeNames = eventTypeID;
+    if (!Array.isArray(eventTypeNames)) {
+      eventTypeNames = [eventTypeID];
+    }
+    const eventTypesRes = await client.query(
+      `SELECT event_type_id FROM eventtypes WHERE event_type_name = ANY($1::text[]) AND is_active = true`,
+      [eventTypeNames]
+    );
+    const eventTypeIds = eventTypesRes.rows.map(row => row.event_type_id);
+
+    // Insert into user_eventTypes for each event_type_id
+    for (const eventTypeId of eventTypeIds) {
+      await client.query(
+        `INSERT INTO user_eventTypes (event_type_id, created_by) VALUES ($1, $2)`,
+        [eventTypeId, userId]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.status(201).json({ message: "Organization request saved!", userId });
   } catch (error) {
+    await client.query('ROLLBACK');
     console.error('Error saving request:', error);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 });
 
