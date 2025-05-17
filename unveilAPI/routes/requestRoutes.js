@@ -21,12 +21,23 @@ router.post('/requestToRegister', async (req, res) => {
     const { organizationName, contactNumber, email, address, description, eventTypeID, username, password } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Set user_type_id = 2 for event organizer
     const result = await pool.query(
       `INSERT INTO users
-        (organization_name, contact_number, email, address, description, event_types, username, password)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        (user_type_id, organization_name, contact_number, email, address, description, event_types, username, password)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [organizationName, contactNumber, email, address, description, eventTypeID.join(", "), username, hashedPassword]
+      [
+        2, // user_type_id for event organizer
+        organizationName,
+        contactNumber,
+        email,
+        address,
+        description,
+        eventTypeID.join(", "),
+        username,
+        hashedPassword
+      ]
     );
 
     res.status(201).json({ message: "Organization request saved!", data: result.rows[0] });
