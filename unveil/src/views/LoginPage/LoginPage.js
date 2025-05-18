@@ -26,12 +26,12 @@ export default function LoginPage() {
         body: JSON.stringify(model),
       });
 
+      const result = await response.json(); // Only call this ONCE
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Login failed. Please check your credentials.");
+        throw new Error(result.message || "Login failed. Please check your credentials.");
       }
 
-      const result = await response.json();
       console.log("Login Success:", result);
       
       // Store JWT token and user info in localStorage
@@ -39,7 +39,11 @@ export default function LoginPage() {
       localStorage.setItem('user', JSON.stringify(result.user)); // Ensure userId is stored
       
       // Redirect to HomePage on successful login
-      navigate("/home"); 
+      if (result.user.userType === 1) {
+        navigate("/admindashboard");
+      } else if (result.user.userType === 2) {
+        navigate("/eventorganizerdashboard"); 
+      }
     } catch (error) {
       console.error("Login Error:", error);
       setErrorMessage(error.message || "Error during login. Please try again.");

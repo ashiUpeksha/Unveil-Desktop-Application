@@ -352,7 +352,8 @@ router.post('/login', async (req, res) => {
         userId: user.user_id, // Include userId in the token payload
         username: user.username,
         email: user.email,
-        organization: user.organization_name
+        organization: user.organization_name,
+        userType: user.user_type_id
       },
       process.env.JWT_SECRET,
       { expiresIn: '8h' }  // Token lifetime
@@ -366,7 +367,8 @@ router.post('/login', async (req, res) => {
         userId: user.user_id, // Add userId explicitly
         username: user.username, 
         email: user.email,
-        organization: user.organization_name 
+        organization: user.organization_name,
+        userType: user.user_type_id
       }, 
       token 
     });

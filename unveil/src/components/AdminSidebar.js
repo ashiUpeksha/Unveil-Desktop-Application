@@ -8,20 +8,20 @@ import PersonIcon from "@mui/icons-material/Person";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import { Link, useLocation } from "react-router-dom";
 
-const drawerWidth = 70; // Narrow width for compact sidebar
+const drawerWidth = 200; // Match Sidebar.js width
 
-const NewSidebar = () => {
+const AdminDashBoardSidebar = () => {
   const location = useLocation();
 
   const navItems = [
     {
       label: "User Management",
-      icon: <PersonIcon sx={{ fontSize: 28 }} />,
+      icon: <PersonIcon sx={{ fontSize: 30, mb: 1 }} />,
       path: "/usermanagement",
     },
     {
       label: "Event Handling",
-      icon: <AssignmentIcon sx={{ fontSize: 28 }} />,
+      icon: <AssignmentIcon sx={{ fontSize: 30, mb: 1 }} />,
       path: "/eventhandling",
     },
   ];
@@ -34,16 +34,16 @@ const NewSidebar = () => {
         flexShrink: 0,
         [`& .MuiDrawer-paper`]: {
           width: drawerWidth,
+          boxSizing: "border-box",
           backgroundColor: "#863F55",
           color: "white",
           mt: 8,
           display: "flex",
           alignItems: "center",
-          overflowX: "hidden",
         },
       }}
     >
-      <List sx={{ width: "100%", mt: 2 }}>
+      <List sx={{ width: "100%" }}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -59,15 +59,15 @@ const NewSidebar = () => {
                   flexDirection: "column",
                   alignItems: "center",
                   py: 2,
-                  backgroundColor: isActive ? "#A5536D" : "inherit",
                   borderLeft: isActive ? "4px solid white" : "none",
+                  backgroundColor: isActive ? "#A5536D" : "inherit",
                 }}
               >
                 {item.icon}
                 <ListItemText
                   primary={item.label}
-                  sx={{ textAlign: "center" }}
-                  primaryTypographyProps={{ fontSize: 10 }}
+                  sx={{ textAlign: "center", m: 0 }}
+                  primaryTypographyProps={{ fontSize: 14 }}
                 />
               </ListItemButton>
             </ListItem>
@@ -78,4 +78,4 @@ const NewSidebar = () => {
   );
 };
 
-export default NewSidebar;
+export default AdminDashBoardSidebar;
