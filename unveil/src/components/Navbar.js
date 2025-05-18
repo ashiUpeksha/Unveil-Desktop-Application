@@ -32,7 +32,7 @@ const NavBar = () => {
         {/* Left section: Logo and App Name */}
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Link
-            to="/home"
+            to="/eventorganizerdashboard"
             style={{ display: "flex", alignItems: "center", textDecoration: "none" }}
           >
             <img
