@@ -18,6 +18,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const statusOptions = [
   { value: "", label: "-Select Status-" },
@@ -35,6 +36,7 @@ const AdminEventHandling = () => {
     { value: "", label: "-Select Event Type-" },
   ]);
   const [events, setEvents] = React.useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Fetch event types from backend
@@ -62,6 +64,14 @@ const AdminEventHandling = () => {
       })
       .catch(() => setEvents([]));
   }, []);
+
+  // Helper to map status code to label
+  const getStatusLabel = (status) => {
+    if (status === 1) return "Pending...";
+    if (status === 2) return "Approved";
+    if (status === 3) return "Rejected";
+    return "Pending";
+  };
 
   return (
     <>
@@ -208,7 +218,18 @@ const AdminEventHandling = () => {
                               : ""}
                           </TableCell>
                           <TableCell>{event.event_venue}</TableCell>
-                          <TableCell>{event.status || "Pending"}</TableCell>
+                          <TableCell>
+                            <span
+                              style={{
+                                color: "#007AFF",
+                                fontWeight: 500,
+                                cursor: "pointer",
+                              }}
+                              onClick={() => navigate(`/acceptEvent/${event.event_id}`)}
+                            >
+                              {getStatusLabel(event.status)}
+                            </span>
+                          </TableCell>
                           <TableCell>
                             {/* Placeholder for actions */}
                             <button>View</button>

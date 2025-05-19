@@ -29,7 +29,7 @@ function App() {
         <Route path="/admindashboard" element={<AdminDashBoard />} />
         <Route path="/eventorganizerdashboard" element={<EventOrganizerDashBoard />} />
         <Route path="/admineventhandling" element={<AdminEventHandling />} />
-
+        <Route path="/acceptEvent/:eventId" element={<AcceptEvent />} />
       </Routes>
     </Router>
   );
