@@ -22,7 +22,7 @@ const AdminDashBoardSidebar = () => {
     {
       label: "Event Handling",
       icon: <AssignmentIcon sx={{ fontSize: 30, mb: 1 }} />,
-      path: "/eventhandling",
+      path: "/admineventhandling", // updated path
     },
   ];
 
