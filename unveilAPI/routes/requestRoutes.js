@@ -297,6 +297,16 @@ router.get('/events', async (req, res) => {
   }
 });
 
+// New endpoint to get all events (for admin event handling)
+router.get('/allEvents', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM addnewevent ORDER BY event_id DESC');
+    res.json({ events: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
+});
+
 // Get single event by event_id
 router.get('/event/:eventId', async (req, res) => {
   const { eventId } = req.params;

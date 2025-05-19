@@ -10,6 +10,8 @@ import Login from "./views/LoginPage/LoginPage";
 import ResetPassword from "./views/ResetPassword/ResetPassword";
 import AdminRegister from "./views/AdminRegister/AdminRegister";
 import AdminDashBoard from "./views/AdminDashBoard/AdminDashBoard";
+import AcceptEvent from "./views/AcceptEvent/AcceptEvent";
+import AdminEventHandling from "./views/AdminEventHandling/AdminEventHandling";
 
 function App() {
   return (
@@ -21,11 +23,12 @@ function App() {
         <Route path="/addimageorvideos" element={<AddImagesOrVideos />} /> 
         <Route path="/viewevents" element={<ViewEvents />} /> 
         <Route path="/updateevents" element={<UpdateEvents />} /> 
-        <Route path="/register" element={<RequestToSingUp />} />   
+        <Route path="/register" element={<RequestToSingUp />} /> 
         {/* <Route path="/" element={<AdminRegister />} /> */}
         <Route path="/" element={<AdminDashBoard />} />
         <Route path="/admindashboard" element={<AdminDashBoard />} />
         <Route path="/eventorganizerdashboard" element={<EventOrganizerDashBoard />} />
+        <Route path="/admineventhandling" element={<AdminEventHandling />} />
 
       </Routes>
     </Router>
