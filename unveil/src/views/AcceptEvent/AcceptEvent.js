@@ -1,157 +1,302 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { Box, Typography, Button, TextField } from "@mui/material";
+import Navbar from '../../components/Navbar';
+import AdminSidebar from '../../components/AdminSidebar';
 import {
-  Box,
-  Typography,
-  TextField,
-  Switch,
-  Button,
-  IconButton,
-  Grid,
-} from "@mui/material";
-import Navbar from "../../components/Navbar";
-import NewSecondSidebar from "../../components/NewSecondSidebar";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+  LocalizationProvider,
+  DateTimePicker,
+  TimePicker
+} from '@mui/x-date-pickers';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import dayjs from 'dayjs';
+import { useParams } from "react-router-dom";
+import axios from "axios";
+
+const inputStyle = {
+  width: '100%',
+  height: '50px',
+  padding: '10px',
+  borderRadius: '5px',
+  border: '1px solid #ccc',
+  marginTop: '5px',
+  boxSizing: 'border-box',
+};
+
+const textareaStyle = {
+  width: '100%',
+  minHeight: '100px',
+  padding: '10px',
+  borderRadius: '5px',
+  border: '1px solid #ccc',
+  marginTop: '5px',
+  boxSizing: 'border-box',
+  resize: 'vertical',
+};
 
 const AcceptEvent = () => {
-  const [isActive, setIsActive] = useState(false);
+  const { eventId } = useParams();
+  const [eventData, setEventData] = useState(null);
+  const [startDate, setStartDate] = useState(null);
+  const [startTime, setStartTime] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [endTime, setEndTime] = useState(null);
+
+  useEffect(() => {
+    if (eventId) {
+      axios.get(`http://localhost:3000/api/event/${eventId}`)
+        .then(res => {
+          setEventData(res.data);
+          // Set date/time pickers
+          setStartDate(res.data.event_start_date ? dayjs(res.data.event_start_date) : null);
+          setStartTime(res.data.event_start_time ? dayjs(res.data.event_start_time, "HH:mm:ss") : null);
+          setEndDate(res.data.event_end_date ? dayjs(res.data.event_end_date) : null);
+          setEndTime(res.data.event_end_time ? dayjs(res.data.event_end_time, "HH:mm:ss") : null);
+        });
+    }
+  }, [eventId]);
+
+  // Helper to combine date and time into a single Date object
+  const getCombinedDateTime = (date, time) => {
+    if (!date || !time) return null;
+    const d = dayjs(date);
+    const t = dayjs(time);
+    return d.hour(t.hour()).minute(t.minute()).second(0).millisecond(0);
+  };
+
+  // Helper to get duration as "X days Y hours Z minutes"
+  const getDurationString = (start, end) => {
+    if (!start || !end) return "";
+    const diff = end.diff(start, 'minute');
+    const days = Math.floor(diff / (60 * 24));
+    const hours = Math.floor((diff % (60 * 24)) / 60);
+    const minutes = diff % 60;
+    let str = "";
+    if (days > 0) str += `${days} day${days > 1 ? "s" : ""} `;
+    if (hours > 0) str += `${hours} hour${hours > 1 ? "s" : ""} `;
+    if (minutes > 0) str += `${minutes} minute${minutes > 1 ? "s" : ""}`;
+    return str.trim();
+  };
+
+  const eventStartDateTime = getCombinedDateTime(startDate, startTime);
+  const eventEndDateTime = getCombinedDateTime(endDate, endTime);
 
   return (
     <Box sx={{ display: "flex" }}>
       <Navbar />
-      <NewSecondSidebar />
-
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          backgroundColor: "#F7F2F0",
-          p: 3,
-          mt: 8,
-          minHeight: "100vh",
-        }}
-      >
-        {/* Top Row */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            mb: 3,
-            alignItems: "center",
-          }}
-        >
-          <Typography variant="h5" fontWeight="bold">
-            Accept Event
-          </Typography>
-          <IconButton sx={{ backgroundColor: "#007AFF" }}>
-            <ArrowBackIcon sx={{ color: "#fff" }} />
-          </IconButton>
-        </Box>
-
-        {/* Form */}
-        <Grid container spacing={2} mb={2}>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="Event type" size="small" />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="Event Name" size="small" />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="Date" size="small" />
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="Start Time" size="small" />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="End Time" size="small" />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="Duration" size="small" />
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="Venue" size="small" />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="Entrance Fee" size="small" />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="Contact Number" size="small" />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Description"
-              size="small"
-              multiline
-              rows={3}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Special Guests"
-              size="small"
-              multiline
-              rows={3}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              Images and Videos of the event
-            </Typography>
-            {/* You can add an upload component here */}
-          </Grid>
-
-          {/* Active Toggle */}
-          <Grid item xs={12} sm={3}>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <Typography sx={{ mr: 2 }}>Active</Typography>
-              <Switch
-                checked={isActive}
-                onChange={() => setIsActive(!isActive)}
-              />
+      <AdminSidebar />
+      <Box component="main" sx={{ flexGrow: 1, backgroundColor: "#C6C6C6", p: 3, mt: 8, minHeight: "100vh" }}>
+        <Box sx={{ backgroundColor: "white", p: 3, borderRadius: 2, boxShadow: 3 }}>
+          <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Approve or Reject Event</Typography>
+          <form>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
+              {/* Event Type */}
+              <Box>
+                <Typography variant="subtitle1">Event Type</Typography>
+                <input
+                  type="text"
+                  name="eventType"
+                  style={inputStyle}
+                  value={eventData?.event_type || ""}
+                  readOnly
+                />
+              </Box>
+              {/* Event Name */}
+              <Box>
+                <Typography variant="subtitle1">Event Name</Typography>
+                <input
+                  type="text"
+                  name="eventName"
+                  style={inputStyle}
+                  value={eventData?.event_name || ""}
+                  readOnly
+                />
+              </Box>
+              {/* Venue */}
+              <Box>
+                <Typography variant="subtitle1">Venue</Typography>
+                <input
+                  type="text"
+                  name="venue"
+                  style={inputStyle}
+                  value={eventData?.event_venue || ""}
+                  readOnly
+                />
+              </Box>
+              {/* Start Date and Time */}
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Box>
+                  <Typography variant="subtitle1">Start Date</Typography>
+                  <TextField
+                    value={startDate ? startDate.format("MM/DD/YYYY") : ""}
+                    InputProps={{
+                      readOnly: true,
+                      style: { color: "#000", fontWeight: 500, background: "#f5f5f5" }
+                    }}
+                    fullWidth
+                    placeholder="MM/DD/YYYY"
+                    size="medium"
+                    variant="outlined"
+                  />
+                </Box>
+                <Box>
+                  <Typography variant="subtitle1">Start Time</Typography>
+                  <TextField
+                    value={startTime ? startTime.format("hh:mm A") : ""}
+                    InputProps={{
+                      readOnly: true,
+                      style: { color: "#000", fontWeight: 500, background: "#f5f5f5" }
+                    }}
+                    fullWidth
+                    placeholder="hh:mm aa"
+                    size="medium"
+                    variant="outlined"
+                  />
+                </Box>
+                {/* End Date and Time */}
+                <Box>
+                  <Typography variant="subtitle1">End Date</Typography>
+                  <TextField
+                    value={endDate ? endDate.format("MM/DD/YYYY") : ""}
+                    InputProps={{
+                      readOnly: true,
+                      style: { color: "#000", fontWeight: 500, background: "#f5f5f5" }
+                    }}
+                    fullWidth
+                    placeholder="MM/DD/YYYY"
+                    size="medium"
+                    variant="outlined"
+                  />
+                </Box>
+                <Box>
+                  <Typography variant="subtitle1">End Time</Typography>
+                  <TextField
+                    value={endTime ? endTime.format("hh:mm A") : ""}
+                    InputProps={{
+                      readOnly: true,
+                      style: { color: "#000", fontWeight: 500, background: "#f5f5f5" }
+                    }}
+                    fullWidth
+                    placeholder="hh:mm aa"
+                    size="medium"
+                    variant="outlined"
+                  />
+                </Box>
+              </LocalizationProvider>
+              {/* Duration */}
+              <Box>
+                <Typography variant="subtitle1">Duration</Typography>
+                <input
+                  type="text"
+                  name="duration"
+                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed" }}
+                  readOnly
+                  value={
+                    eventStartDateTime && eventEndDateTime
+                      ? getDurationString(eventStartDateTime, eventEndDateTime)
+                      : eventData?.event_duration || ""
+                  }
+                />
+              </Box>
+              {/* Entrance Fee */}
+              <Box>
+                <Typography variant="subtitle1">Entrance Fee</Typography>
+                <input
+                  type="text"
+                  name="entranceFee"
+                  style={inputStyle}
+                  value={eventData?.entrance_fee || ""}
+                  readOnly
+                />
+              </Box>
+              {/* Contact Number */}
+              <Box>
+                <Typography variant="subtitle1">Contact Number</Typography>
+                <input
+                  type="text"
+                  name="contactNumber"
+                  style={inputStyle}
+                  value={eventData?.contact_number || ""}
+                  readOnly
+                />
+              </Box>
+              {/* Empty box to fill the next column */}
+              <Box />
+              {/* Empty box to fill the next column */}
+              <Box />
+              {/* Event Venue Address, Description, Special Guests in the same row */}
+              <Box>
+                <Typography variant="subtitle1">Event Venue Address</Typography>
+                <textarea
+                  name="venueAddress"
+                  style={textareaStyle}
+                  value={eventData?.event_venue_address || ""}
+                  readOnly
+                />
+              </Box>
+              <Box>
+                <Typography variant="subtitle1">Description</Typography>
+                <textarea
+                  name="description"
+                  style={textareaStyle}
+                  value={eventData?.description || ""}
+                  readOnly
+                />
+              </Box>
+              <Box>
+                <Typography variant="subtitle1">Special Guests</Typography>
+                <textarea
+                  name="specialGuests"
+                  style={textareaStyle}
+                  value={eventData?.special_guests || ""}
+                  readOnly
+                />
+              </Box>
+              {/* Images and Videos Field */}
+              <Box sx={{ gridColumn: { xs: "span 1", sm: "span 3" } }}>
+                <Typography variant="subtitle1">Images and Videos of the Event</Typography>
+                <Button variant="contained" color="primary" >
+                  Show Media
+                </Button>
+              </Box>
+              
+              
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 2,
+                  mt: 2,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "#FF3B30",
+                    color: "#fff",
+                    px: 5,
+                    "&:hover": {
+                      backgroundColor: "#D32F2F",
+                    },
+                  }}
+                >
+                  REJECT
+                </Button>
+                <Button
+                  variant="contained"
+                  sx={{
+                    backgroundColor: "#4CAF50",
+                    color: "#fff",
+                    px: 5,
+                    "&:hover": {
+                      backgroundColor: "#388E3C",
+                    },
+                  }}
+                >
+                  ACCEPT
+                </Button>
+              </Box>
             </Box>
-          </Grid>
-        </Grid>
-
-        {/* Action Buttons */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "flex-end",
-            gap: 2,
-            mt: 2,
-          }}
-        >
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: "#FF3B30",
-              color: "#fff",
-              px: 5,
-              "&:hover": {
-                backgroundColor: "#D32F2F",
-              },
-            }}
-          >
-            REJECT
-          </Button>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: "#4CAF50",
-              color: "#fff",
-              px: 5,
-              "&:hover": {
-                backgroundColor: "#388E3C",
-              },
-            }}
-          >
-            ACCEPT
-          </Button>
+          </form>
         </Box>
       </Box>
     </Box>

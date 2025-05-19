@@ -1,6 +1,6 @@
 import React from "react";
 import NavBar from "../../components/Navbar";
-import NewSidebar from "../../components/AdminSidebar";
+import AdminSidebar from "../../components/AdminSidebar";
 import Box from "@mui/material/Box";
 
 const AdminDashBoard = () => {
@@ -8,7 +8,7 @@ const AdminDashBoard = () => {
     <div>
       <NavBar />
       <div style={{ display: "flex" }}>
-        <NewSidebar />
+        <AdminSidebar />
         <div style={{ flex: 1 }}>
           <Box
         component="main"
