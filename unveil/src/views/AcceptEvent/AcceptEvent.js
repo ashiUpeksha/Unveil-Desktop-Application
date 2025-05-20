@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Button, TextField } from "@mui/material";
+import { Box, Typography, Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import Navbar from '../../components/Navbar';
 import AdminSidebar from '../../components/AdminSidebar';
 import {
@@ -9,8 +9,10 @@ import {
 } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
 
 const inputStyle = {
   width: '100%',
@@ -40,6 +42,10 @@ const AcceptEvent = () => {
   const [startTime, setStartTime] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [endTime, setEndTime] = useState(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMsg, setDialogMsg] = useState("");
+  const [dialogType, setDialogType] = useState(""); // "success" or "reject"
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (eventId) {
@@ -79,6 +85,25 @@ const AcceptEvent = () => {
 
   const eventStartDateTime = getCombinedDateTime(startDate, startTime);
   const eventEndDateTime = getCombinedDateTime(endDate, endTime);
+
+  const handleStatusUpdate = async (newStatus) => {
+    if (!eventId) return;
+    try {
+      await axios.put(`http://localhost:3000/api/event/${eventId}/status`, { status: newStatus });
+      if (newStatus === 2) {
+        setDialogMsg("Event Approved Successfully!");
+        setDialogType("success");
+      } else {
+        setDialogMsg("Event Rejected Successfully!");
+        setDialogType("reject");
+      }
+      setDialogOpen(true);
+    } catch (err) {
+      setDialogMsg("Failed to update status");
+      setDialogType("");
+      setDialogOpen(true);
+    }
+  };
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -262,6 +287,7 @@ const AcceptEvent = () => {
               
               <Box
                 sx={{
+                  gridColumn: "span 3",
                   display: "flex",
                   justifyContent: "flex-end",
                   gap: 2,
@@ -278,6 +304,10 @@ const AcceptEvent = () => {
                       backgroundColor: "#D32F2F",
                     },
                   }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleStatusUpdate(3); // 3 = Rejected
+                  }}
                 >
                   REJECT
                 </Button>
@@ -291,6 +321,10 @@ const AcceptEvent = () => {
                       backgroundColor: "#388E3C",
                     },
                   }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleStatusUpdate(2); // 2 = Approved
+                  }}
                 >
                   ACCEPT
                 </Button>
@@ -298,6 +332,30 @@ const AcceptEvent = () => {
             </Box>
           </form>
         </Box>
+        {/* Dialog for status update result */}
+        <Dialog open={dialogOpen} onClose={() => {
+          setDialogOpen(false);
+          navigate("/admineventhandling");
+        }}>
+          <DialogTitle>Status Update</DialogTitle>
+          <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {dialogType === "success" && (
+              <CheckCircleIcon sx={{ color: "#00C853", fontSize: 40 }} />
+            )}
+            {dialogType === "reject" && (
+              <CancelIcon sx={{ color: "#FF1744", fontSize: 40 }} />
+            )}
+            <Typography>{dialogMsg}</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => {
+              setDialogOpen(false);
+              navigate("/admineventhandling");
+            }} autoFocus>
+              OK
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </Box>
   );

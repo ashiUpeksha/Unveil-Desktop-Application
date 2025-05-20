@@ -440,5 +440,26 @@ router.post('/adminRegister', async (req, res) => {
   }
 });
 
+// Update event status by event_id
+router.put('/event/:eventId/status', async (req, res) => {
+  const { eventId } = req.params;
+  const { status } = req.body;
+  if (![1, 2, 3].includes(Number(status))) {
+    return res.status(400).json({ error: "Invalid status value" });
+  }
+  try {
+    const result = await pool.query(
+      'UPDATE addnewevent SET status = $1 WHERE event_id = $2 RETURNING *',
+      [status, eventId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    res.json({ success: true, event: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update status" });
+  }
+});
+
 
 module.exports = router;

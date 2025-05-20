@@ -23,6 +23,7 @@ const AdminDashBoardSidebar = () => {
       label: "Event Handling",
       icon: <AssignmentIcon sx={{ fontSize: 30, mb: 1 }} />,
       path: "/admineventhandling", // updated path
+      match: ["/admineventhandling", "/acceptEvent"], // highlight for both
     },
   ];
 
@@ -45,7 +46,11 @@ const AdminDashBoardSidebar = () => {
     >
       <List sx={{ width: "100%" }}>
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          // Highlight if path matches exactly or starts with any match prefix
+          const isActive =
+            item.match
+              ? item.match.some((prefix) => location.pathname.startsWith(prefix))
+              : location.pathname === item.path;
           return (
             <ListItem
               key={item.label}
