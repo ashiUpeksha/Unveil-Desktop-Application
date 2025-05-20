@@ -65,13 +65,34 @@ const AdminEventHandling = () => {
       .catch(() => setEvents([]));
   }, []);
 
-  // Helper to map status code to label
-  const getStatusLabel = (status) => {
-    if (status === 1) return "Pending...";
-    if (status === 2) return "Approved";
-    if (status === 3) return "Rejected";
-    return "Pending";
+  // Helper to map status code to label and color
+  const getStatusLabelAndColor = (status) => {
+    if (status === 1) return { label: "Pending...", color: "#007AFF" };
+    if (status === 2) return { label: "Approved", color: "#00FF15" };
+    if (status === 3) return { label: "Rejected", color: "#FF0004" };
+    return { label: "Pending", color: "#007AFF" };
   };
+
+  // Filtering logic
+  const filteredEvents = events.filter((event) => {
+    // Status filter
+    let statusMatch = true;
+    if (status) {
+      if (status === "Pending") statusMatch = event.status === 1;
+      else if (status === "Approved") statusMatch = event.status === 2;
+      else if (status === "Rejected") statusMatch = event.status === 3;
+    }
+    // Event type filter
+    let typeMatch = true;
+    if (eventType) typeMatch = event.event_type === eventType;
+    // Event name filter (case-insensitive substring match)
+    let nameMatch = true;
+    if (eventName)
+      nameMatch = event.event_name
+        ?.toLowerCase()
+        .includes(eventName.toLowerCase());
+    return statusMatch && typeMatch && nameMatch;
+  });
 
   return (
     <>
@@ -201,41 +222,44 @@ const AdminEventHandling = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {events.length === 0 ? (
+                    {filteredEvents.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} align="center">
                           No events found.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      events.map((event) => (
-                        <TableRow key={event.event_id}>
-                          <TableCell>{event.event_type}</TableCell>
-                          <TableCell>{event.event_name}</TableCell>
-                          <TableCell>
-                            {event.event_start_date
-                              ? new Date(event.event_start_date).toLocaleDateString()
-                              : ""}
-                          </TableCell>
-                          <TableCell>{event.event_venue}</TableCell>
-                          <TableCell>
-                            <span
-                              style={{
-                                color: "#007AFF",
-                                fontWeight: 500,
-                                cursor: "pointer",
-                              }}
-                              onClick={() => navigate(`/acceptEvent/${event.event_id}`)}
-                            >
-                              {getStatusLabel(event.status)}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            {/* Placeholder for actions */}
-                            <button>View</button>
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      filteredEvents.map((event) => {
+                        const { label, color } = getStatusLabelAndColor(event.status);
+                        return (
+                          <TableRow key={event.event_id}>
+                            <TableCell>{event.event_type}</TableCell>
+                            <TableCell>{event.event_name}</TableCell>
+                            <TableCell>
+                              {event.event_start_date
+                                ? new Date(event.event_start_date).toLocaleDateString()
+                                : ""}
+                            </TableCell>
+                            <TableCell>{event.event_venue}</TableCell>
+                            <TableCell>
+                              <span
+                                style={{
+                                  color,
+                                  fontWeight: 500,
+                                  cursor: "pointer",
+                                }}
+                                onClick={() => navigate(`/acceptEvent/${event.event_id}`)}
+                              >
+                                {label}
+                              </span>
+                            </TableCell>
+                            <TableCell>
+                              {/* Placeholder for actions */}
+                              <button>View</button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     )}
                   </TableBody>
                 </Table>
