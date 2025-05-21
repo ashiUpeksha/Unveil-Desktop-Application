@@ -45,6 +45,7 @@ const AcceptEvent = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogMsg, setDialogMsg] = useState("");
   const [dialogType, setDialogType] = useState(""); // "success" or "reject"
+  const [selectedStatus, setSelectedStatus] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,6 +53,7 @@ const AcceptEvent = () => {
       axios.get(`http://localhost:3000/api/event/${eventId}`)
         .then(res => {
           setEventData(res.data);
+          setSelectedStatus(res.data.status); // Save status for button highlight
           // Set date/time pickers
           setStartDate(res.data.event_start_date ? dayjs(res.data.event_start_date) : null);
           setStartTime(res.data.event_start_time ? dayjs(res.data.event_start_time, "HH:mm:ss") : null);
@@ -90,6 +92,7 @@ const AcceptEvent = () => {
     if (!eventId) return;
     try {
       await axios.put(`http://localhost:3000/api/event/${eventId}/status`, { status: newStatus });
+      setSelectedStatus(newStatus); // Update highlight immediately
       if (newStatus === 2) {
         setDialogMsg("Event Approved Successfully!");
         setDialogType("success");
@@ -295,13 +298,19 @@ const AcceptEvent = () => {
                 }}
               >
                 <Button
-                  variant="contained"
+                  variant={selectedStatus === 3 ? "contained" : "outlined"}
                   sx={{
-                    backgroundColor: "#FF3B30",
-                    color: "#fff",
+                    backgroundColor: selectedStatus === 3 ? "#FF3B30" : "transparent",
+                    color: selectedStatus === 3 ? "#fff" : "#FF3B30",
+                    borderColor: "#FF3B30",
                     px: 5,
+                    fontWeight: selectedStatus === 3 ? "bold" : "normal",
+                    borderWidth: selectedStatus === 3 ? 2 : 1,
+                    boxShadow: selectedStatus === 3 ? "0 0 8px #FF3B30" : "none",
                     "&:hover": {
                       backgroundColor: "#D32F2F",
+                      color: "#fff",
+                      borderColor: "#D32F2F",
                     },
                   }}
                   onClick={(e) => {
@@ -312,13 +321,19 @@ const AcceptEvent = () => {
                   REJECT
                 </Button>
                 <Button
-                  variant="contained"
+                  variant={selectedStatus === 2 ? "contained" : "outlined"}
                   sx={{
-                    backgroundColor: "#4CAF50",
-                    color: "#fff",
+                    backgroundColor: selectedStatus === 2 ? "#4CAF50" : "transparent",
+                    color: selectedStatus === 2 ? "#fff" : "#4CAF50",
+                    borderColor: "#4CAF50",
                     px: 5,
+                    fontWeight: selectedStatus === 2 ? "bold" : "normal",
+                    borderWidth: selectedStatus === 2 ? 2 : 1,
+                    boxShadow: selectedStatus === 2 ? "0 0 8px #4CAF50" : "none",
                     "&:hover": {
                       backgroundColor: "#388E3C",
+                      color: "#fff",
+                      borderColor: "#388E3C",
                     },
                   }}
                   onClick={(e) => {

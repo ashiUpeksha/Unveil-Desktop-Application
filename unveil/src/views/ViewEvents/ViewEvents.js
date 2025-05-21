@@ -70,6 +70,12 @@ const ViewEvents = () => {
   const filteredEvents = eventData.filter(event => {
     // Event Type filter
     if (filters.eventType && event.event_type !== filters.eventType) return false;
+    // Status filter
+    if (filters.status) {
+      if (filters.status === "Pending" && event.status !== 1) return false;
+      if (filters.status === "Approved" && event.status !== 2) return false;
+      if (filters.status === "Rejected" && event.status !== 3) return false;
+    }
     // Event Name filter (case-insensitive substring match)
     if (
       filters.eventName &&
@@ -123,7 +129,7 @@ const ViewEvents = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(4, 1fr)" }, // 4 columns now
               gap: 2,
             }}
           >
@@ -149,6 +155,28 @@ const ViewEvents = () => {
                     {opt}
                   </option>
                 ))}
+              </select>
+            </Box>
+            {/* Status Dropdown */}
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Status
+              </Typography>
+              <select
+                style={{
+                  width: "90%",
+                  padding: "10px",
+                  borderRadius: "5px",
+                  border: "1px solid #ccc",
+                  marginTop: "5px",
+                }}
+                value={filters.status || ""}
+                onChange={e => handleFilterChange("status", e.target.value)}
+              >
+                <option value="">-Select status-</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
               </select>
             </Box>
             {/* Event Name */}
@@ -209,6 +237,9 @@ const ViewEvents = () => {
                       <strong>Venue</strong>
                     </TableCell>
                     <TableCell>
+                      <strong>Status</strong>
+                    </TableCell>
+                    <TableCell>
                       <strong>Action</strong>
                     </TableCell>
                   </TableRow>
@@ -217,21 +248,33 @@ const ViewEvents = () => {
                   {filteredEvents.map((event, index) => {
                     let displayDate = "";
                     if (event.event_start_date) {
-                      // Always use the first 10 characters if it's a string (YYYY-MM-DD)
                       if (typeof event.event_start_date === "string") {
                         displayDate = event.event_start_date.substring(0, 10);
                       } else {
-                        // If it's a Date object or something else, fallback to toString
                         displayDate = event.event_start_date.toString().substring(0, 10);
                       }
                     }
-                    // If you want to force UTC and avoid timezone shift, do NOT use new Date()
+                    // Status label logic and color
+                    let statusLabel = "Pending...";
+                    let statusColor = "#007AFF";
+                    if (event.status === 2) {
+                      statusLabel = "Approved";
+                      statusColor = "#00FF15";
+                    } else if (event.status === 3) {
+                      statusLabel = "Rejected";
+                      statusColor = "#FF0004";
+                    }
                     return (
                       <TableRow key={index}>
                         <TableCell>{event.event_type}</TableCell>
                         <TableCell>{event.event_name}</TableCell>
                         <TableCell>{displayDate}</TableCell>
                         <TableCell>{event.event_venue}</TableCell>
+                        <TableCell>
+                          <span style={{ color: statusColor, fontWeight: 500 }}>
+                            {statusLabel}
+                          </span>
+                        </TableCell>
                         <TableCell>
                           <IconButton
                             color="primary"
