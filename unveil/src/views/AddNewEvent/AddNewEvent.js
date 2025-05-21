@@ -18,6 +18,8 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 import {
   LocalizationProvider,
@@ -50,7 +52,9 @@ const AddNewEventPage = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-          
+  const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  const [resultDialogMsg, setResultDialogMsg] = useState("");
+  const [resultDialogType, setResultDialogType] = useState(""); // "success" or "error"
 
   const inputStyle = {
     width: '100%',
@@ -101,7 +105,7 @@ const AddNewEventPage = () => {
       venueAddress: "", 
     },
     validationSchema,
-    onSubmit: async (values) => {
+    onSubmit: async (values, { resetForm }) => {
       try {
         setIsUploading(true);
         
@@ -142,11 +146,11 @@ const AddNewEventPage = () => {
 
         const response = await axios.post(
           "http://localhost:3000/api/addNewEvent", 
-          model, // Use FormData to include files
+          model,
           {
             headers: {
               'Content-Type': 'multipart/form-data',
-              'Authorization': `Bearer ${token}` // Add the Authorization header
+              'Authorization': `Bearer ${token}`
             },
             onUploadProgress: (progressEvent) => {
               const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -156,8 +160,10 @@ const AddNewEventPage = () => {
         );
 
         if (response.data.success) {
-          alert(`Event added successfully! Event ID: ${response.data.eventId}`);
-          navigate("/events");
+          setResultDialogMsg("Event added successfully!");
+          setResultDialogType("success");
+          setResultDialogOpen(true);
+          // Do not navigate or reset form here, do it after dialog OK
         } else {
           throw new Error(response.data.error || "Failed to add event");
         }
@@ -172,7 +178,13 @@ const AddNewEventPage = () => {
         if (error.response && error.response.status === 403) {
           alert("You are not authorized to perform this action. Please log in again.");
         } else {
-          alert(error.message || "Failed to add event.");
+          setResultDialogMsg(
+            error.response && error.response.data && error.response.data.error
+              ? error.response.data.error
+              : error.message || "Failed to add event."
+          );
+          setResultDialogType("error");
+          setResultDialogOpen(true);
         }
       } finally {
         setIsUploading(false);
@@ -262,7 +274,6 @@ const AddNewEventPage = () => {
       <Box component="main" sx={{ flexGrow: 1, backgroundColor: "#C6C6C6", p: 3, mt: 8, minHeight: "100vh" }}>
         <Box sx={{ backgroundColor: "white", p: 3, borderRadius: 2, boxShadow: 3 }}>
           <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Add New Event</Typography>
-
           <form onSubmit={formik.handleSubmit}>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
 
@@ -587,6 +598,42 @@ const AddNewEventPage = () => {
             variant="contained"
           >
             Done
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Result Dialog for success/error */}
+      <Dialog
+        open={resultDialogOpen}
+        onClose={() => {
+          setResultDialogOpen(false);
+          if (resultDialogType === "success") {
+            formik.resetForm();
+            setSelectedFiles([]);
+          }
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Status</DialogTitle>
+        <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {resultDialogType === "success" && (
+            <CheckCircleIcon sx={{ color: "#00C853", fontSize: 40 }} />
+          )}
+          {resultDialogType === "error" && (
+            <CancelIcon sx={{ color: "#FF1744", fontSize: 40 }} />
+          )}
+          <Typography>{resultDialogMsg}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setResultDialogOpen(false);
+            if (resultDialogType === "success") {
+              formik.resetForm();
+              setSelectedFiles([]);
+            }
+          }} autoFocus>
+            OK
           </Button>
         </DialogActions>
       </Dialog>
