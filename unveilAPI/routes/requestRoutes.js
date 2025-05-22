@@ -288,7 +288,7 @@ router.get('/events', async (req, res) => {
   if (!userId) return res.status(400).json({ error: "Missing userId" });
   try {
     const result = await pool.query(
-      'SELECT * FROM addnewevent WHERE created_by = $1 ORDER BY event_id DESC',
+      'SELECT * FROM addnewevent WHERE created_by = $1 AND is_active = true ORDER BY event_id DESC',
       [userId]
     );
     res.json({ events: result.rows });
@@ -458,6 +458,23 @@ router.put('/event/:eventId/status', async (req, res) => {
     res.json({ success: true, event: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: "Failed to update status" });
+  }
+});
+
+// API to soft-delete an event (set is_active = false)
+router.put('/event/:eventId/deactivate', async (req, res) => {
+  const { eventId } = req.params;
+  try {
+    const result = await pool.query(
+      'UPDATE addnewevent SET is_active = false WHERE event_id = $1 RETURNING *',
+      [eventId]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    res.json({ success: true, event: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to deactivate event" });
   }
 });
 
