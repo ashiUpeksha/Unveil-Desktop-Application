@@ -248,11 +248,9 @@ const ViewEvents = () => {
                   {filteredEvents.map((event, index) => {
                     let displayDate = "";
                     if (event.event_start_date) {
-                      if (typeof event.event_start_date === "string") {
-                        displayDate = event.event_start_date.substring(0, 10);
-                      } else {
-                        displayDate = event.event_start_date.toString().substring(0, 10);
-                      }
+                      // Format as M/D/YYYY (no leading zeros)
+                      const dateObj = new Date(event.event_start_date);
+                      displayDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}/${dateObj.getFullYear()}`;
                     }
                     // Status label logic and color
                     let statusLabel = "Pending...";
@@ -283,7 +281,11 @@ const ViewEvents = () => {
                           >
                             <EditIcon />
                           </IconButton>
-                          <IconButton color="error" aria-label="delete">
+                          <IconButton
+                            color="error"
+                            aria-label="delete"
+                            onClick={() => navigate("/deleteevent", { state: { event } })}
+                          >
                             <DeleteIcon />
                           </IconButton>
                         </TableCell>
