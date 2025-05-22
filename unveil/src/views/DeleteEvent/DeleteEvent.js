@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import {
@@ -9,7 +9,10 @@ import {
 } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 
 const inputStyle = {
   width: '100%',
@@ -34,6 +37,7 @@ const textareaStyle = {
 
 const DeleteEventPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [eventId, setEventId] = useState(null);
 
   // Form fields state
@@ -51,6 +55,10 @@ const DeleteEventPage = () => {
   const [description, setDescription] = useState("");
   const [specialGuests, setSpecialGuests] = useState("");
   const [media, setMedia] = useState([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogSuccess, setDialogSuccess] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState("");
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   // Get eventId from location.state (when navigating from ViewEvents)
   useEffect(() => {
@@ -133,6 +141,41 @@ const DeleteEventPage = () => {
   const eventStartDateTime = getCombinedDateTime(startDate, startTime);
   const eventEndDateTime = getCombinedDateTime(endDate, endTime);
 
+  const handleDelete = async (e) => {
+    e.preventDefault();
+    if (!eventId) return;
+    setConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setConfirmOpen(false);
+    try {
+      const res = await fetch(`http://localhost:3000/api/event/${eventId}/deactivate`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" }
+      });
+      if (res.ok) {
+        setDialogSuccess(true);
+        setDialogMessage("Event deleted successfully.");
+      } else {
+        const data = await res.json();
+        setDialogSuccess(false);
+        setDialogMessage(data.error || "Failed to delete event.");
+      }
+    } catch (err) {
+      setDialogSuccess(false);
+      setDialogMessage("Failed to delete event.");
+    }
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    if (dialogSuccess) {
+      navigate("/viewevents");
+    }
+  };
+
   return (
     <Box sx={{ display: "flex" }}>
       <Navbar />
@@ -140,7 +183,7 @@ const DeleteEventPage = () => {
       <Box component="main" sx={{ flexGrow: 1, backgroundColor: "#C6C6C6", p: 3, mt: 8, minHeight: "100vh" }}>
         <Box sx={{ backgroundColor: "white", p: 3, borderRadius: 2, boxShadow: 3 }}>
           <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Delete Event</Typography>
-          <form>
+          <form onSubmit={handleDelete}>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
               {/* Event Type */}
               <Box>
@@ -148,9 +191,10 @@ const DeleteEventPage = () => {
                 <input
                   type="text"
                   name="eventType"
-                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed" }}
+                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
                   value={eventType}
                   readOnly
+                  disabled
                 />
               </Box>
               {/* Event Name */}
@@ -160,9 +204,10 @@ const DeleteEventPage = () => {
                   type="text"
                   name="eventName"
                   placeholder="Event Name"
-                  style={inputStyle}
+                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
                   value={eventName}
-                  onChange={e => setEventName(e.target.value)}
+                  readOnly
+                  disabled
                 />
               </Box>
               {/* Venue */}
@@ -172,9 +217,10 @@ const DeleteEventPage = () => {
                   type="text"
                   name="venue"
                   placeholder="Venue"
-                  style={inputStyle}
+                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
                   value={venue}
-                  onChange={e => setVenue(e.target.value)}
+                  readOnly
+                  disabled
                 />
               </Box>
               {/* Start Date and Time */}
@@ -183,29 +229,43 @@ const DeleteEventPage = () => {
                   <Typography variant="subtitle1">Start Date</Typography>
                   <DateTimePicker
                     value={startDate}
-                    onChange={setStartDate}
+                    onChange={() => {}}
                     views={['year', 'month', 'day']}
                     slotProps={{
                       textField: {
                         fullWidth: true,
                         placeholder: "MM/DD/YYYY",
                         size: "medium",
+                        InputProps: {
+                          readOnly: true,
+                          disabled: true,
+                          style: { backgroundColor: "#f0f0f0", cursor: "not-allowed" }
+                        },
+                        inputProps: { style: { color: "#000" } }
                       },
                     }}
+                    disabled
                   />
                 </Box>
                 <Box>
                   <Typography variant="subtitle1">Start Time</Typography>
                   <TimePicker
                     value={startTime}
-                    onChange={setStartTime}
+                    onChange={() => {}}
                     slotProps={{
                       textField: {
                         fullWidth: true,
                         placeholder: "hh:mm aa",
                         size: "medium",
+                        InputProps: {
+                          readOnly: true,
+                          disabled: true,
+                          style: { backgroundColor: "#f0f0f0", cursor: "not-allowed" }
+                        },
+                        inputProps: { style: { color: "#000" } }
                       },
                     }}
+                    disabled
                   />
                 </Box>
                 {/* End Date and Time */}
@@ -213,29 +273,43 @@ const DeleteEventPage = () => {
                   <Typography variant="subtitle1">End Date</Typography>
                   <DateTimePicker
                     value={endDate}
-                    onChange={setEndDate}
+                    onChange={() => {}}
                     views={['year', 'month', 'day']}
                     slotProps={{
                       textField: {
                         fullWidth: true,
                         placeholder: "MM/DD/YYYY",
                         size: "medium",
+                        InputProps: {
+                          readOnly: true,
+                          disabled: true,
+                          style: { backgroundColor: "#f0f0f0", cursor: "not-allowed" }
+                        },
+                        inputProps: { style: { color: "#000" } }
                       },
                     }}
+                    disabled
                   />
                 </Box>
                 <Box>
                   <Typography variant="subtitle1">End Time</Typography>
                   <TimePicker
                     value={endTime}
-                    onChange={setEndTime}
+                    onChange={() => {}}
                     slotProps={{
                       textField: {
                         fullWidth: true,
                         placeholder: "hh:mm aa",
                         size: "medium",
+                        InputProps: {
+                          readOnly: true,
+                          disabled: true,
+                          style: { backgroundColor: "#f0f0f0", cursor: "not-allowed" }
+                        },
+                        inputProps: { style: { color: "#000" } }
                       },
                     }}
+                    disabled
                   />
                 </Box>
               </LocalizationProvider>
@@ -246,8 +320,9 @@ const DeleteEventPage = () => {
                   type="text"
                   name="duration"
                   placeholder="Duration"
-                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed" }}
+                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
                   readOnly
+                  disabled
                   value={
                     eventStartDateTime && eventEndDateTime
                       ? getDurationString(eventStartDateTime, eventEndDateTime)
@@ -262,9 +337,10 @@ const DeleteEventPage = () => {
                   type="text"
                   name="entranceFee"
                   placeholder="Entrance Fee"
-                  style={inputStyle}
+                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
                   value={entranceFee}
-                  onChange={e => setEntranceFee(e.target.value)}
+                  readOnly
+                  disabled
                 />
               </Box>
               {/* Contact Number */}
@@ -274,9 +350,10 @@ const DeleteEventPage = () => {
                   type="text"
                   name="contactNumber"
                   placeholder="Contact Number"
-                  style={inputStyle}
+                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
                   value={contactNumber}
-                  onChange={e => setContactNumber(e.target.value)}
+                  readOnly
+                  disabled
                 />
               </Box>
               {/* Empty box to fill the next column */}
@@ -289,9 +366,10 @@ const DeleteEventPage = () => {
                 <textarea
                   name="venueAddress"
                   placeholder="Address of the event venue"
-                  style={textareaStyle}
+                  style={{ ...textareaStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
                   value={venueAddress}
-                  onChange={e => setVenueAddress(e.target.value)}
+                  readOnly
+                  disabled
                 />
               </Box>
               <Box>
@@ -299,9 +377,10 @@ const DeleteEventPage = () => {
                 <textarea
                   name="description"
                   placeholder="Description"
-                  style={textareaStyle}
+                  style={{ ...textareaStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
                   value={description}
-                  onChange={e => setDescription(e.target.value)}
+                  readOnly
+                  disabled
                 />
               </Box>
               <Box>
@@ -309,9 +388,10 @@ const DeleteEventPage = () => {
                 <textarea
                   name="specialGuests"
                   placeholder="Special Guests"
-                  style={textareaStyle}
+                  style={{ ...textareaStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
                   value={specialGuests}
-                  onChange={e => setSpecialGuests(e.target.value)}
+                  readOnly
+                  disabled
                 />
               </Box>
               {/* Images and Videos Field */}
@@ -355,6 +435,53 @@ const DeleteEventPage = () => {
           </form>
         </Box>
       </Box>
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle sx={{ textAlign: "center" }}>
+          <WarningAmberIcon sx={{ color: "#FF9800", fontSize: 60 }} />
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="h6" sx={{ textAlign: "center" }}>
+            Are you sure you want to delete this event?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center" }}>
+          <Button onClick={() => setConfirmOpen(false)} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            sx={{
+              backgroundColor: "#FF0004",
+              color: "#fff",
+              '&:hover': { backgroundColor: "#d90004" }
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {/* Dialog for delete result */}
+      <Dialog open={dialogOpen} onClose={handleDialogClose}>
+        <DialogTitle sx={{ textAlign: "center" }}>
+          {dialogSuccess ? (
+            <CheckCircleOutlineIcon sx={{ color: "#4caf50", fontSize: 60 }} />
+          ) : (
+            <ErrorOutlineIcon sx={{ color: "#FF0004", fontSize: 60 }} />
+          )}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="h6" sx={{ textAlign: "center" }}>
+            {dialogMessage}
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center" }}>
+          <Button onClick={handleDialogClose} variant="contained" autoFocus>
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

@@ -119,6 +119,8 @@ const ViewEvents = () => {
             borderRadius: 2,
             boxShadow: 3,
             position: "relative",
+            maxWidth: "96vw",
+            margin: "0 auto"
           }}
         >
           <Typography variant="h4" sx={{ fontWeight: "bold", mb: 3 }}>
@@ -129,42 +131,21 @@ const ViewEvents = () => {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", sm: "repeat(4, 1fr)" }, // 4 columns now
-              gap: 2,
+              gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" },
+              gap: 3,
+              mb: 2,
+              alignItems: "end",
+              mx: 0, // Remove extra margin here
             }}
           >
-            {/* Event Type */}
-            <Box sx={{ mb: 1 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Event Type
-              </Typography>
-              <select
-                style={{
-                  width: "90%",
-                  padding: "10px",
-                  borderRadius: "5px",
-                  border: "1px solid #ccc",
-                  marginTop: "5px",
-                }}
-                value={filters.eventType}
-                onChange={e => handleFilterChange("eventType", e.target.value)}
-              >
-                <option value="">-Select event type-</option>
-                {eventTypes.map((opt, i) => (
-                  <option key={i} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
-            </Box>
             {/* Status Dropdown */}
-            <Box sx={{ mb: 1 }}>
+            <Box>
               <Typography variant="subtitle1" gutterBottom>
                 Status
               </Typography>
               <select
                 style={{
-                  width: "90%",
+                  width: "100%",
                   padding: "10px",
                   borderRadius: "5px",
                   border: "1px solid #ccc",
@@ -173,14 +154,38 @@ const ViewEvents = () => {
                 value={filters.status || ""}
                 onChange={e => handleFilterChange("status", e.target.value)}
               >
-                <option value="">-Select status-</option>
+                <option value="">-Select Status-</option>
                 <option value="Pending">Pending</option>
                 <option value="Approved">Approved</option>
                 <option value="Rejected">Rejected</option>
               </select>
             </Box>
+            {/* Event Type */}
+            <Box>
+              <Typography variant="subtitle1" gutterBottom>
+                Event Type
+              </Typography>
+              <select
+                style={{
+                  width: "100%",
+                  padding: "10px",
+                  borderRadius: "5px",
+                  border: "1px solid #ccc",
+                  marginTop: "5px",
+                }}
+                value={filters.eventType}
+                onChange={e => handleFilterChange("eventType", e.target.value)}
+              >
+                <option value="">-Select Event Type-</option>
+                {eventTypes.map((opt, i) => (
+                  <option key={i} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+            </Box>
             {/* Event Name */}
-            <Box sx={{ mb: 1 }}>
+            <Box>
               <Typography variant="subtitle1" gutterBottom>
                 Event Name
               </Typography>
@@ -188,38 +193,20 @@ const ViewEvents = () => {
                 type="text"
                 placeholder="Event Name"
                 style={{
-                  width: "90%",
+                  width: "100%",
                   padding: "10px",
                   borderRadius: "5px",
                   border: "1px solid #ccc",
                   marginTop: "5px",
+                  boxSizing: "border-box"
                 }}
                 value={filters.eventName}
                 onChange={e => handleFilterChange("eventName", e.target.value)}
               />
             </Box>
-            {/* Start Date */}
-            <Box sx={{ mb: 1 }}>
-              <Typography variant="subtitle1" gutterBottom>
-                Start Date
-              </Typography>
-              <input
-                type="date"
-                style={{
-                  width: "90%",
-                  padding: "10px",
-                  borderRadius: "5px",
-                  border: "1px solid #ccc",
-                  marginTop: "5px",
-                }}
-                value={filters.startDate}
-                onChange={e => handleFilterChange("startDate", e.target.value)}
-              />
-            </Box>
           </Box>
-
           {/* Table of events */}
-          <Box mt={4}>
+          <Box mt={4} sx={{ mx: 0 }}>
             <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
               <Table>
                 <TableHead>
