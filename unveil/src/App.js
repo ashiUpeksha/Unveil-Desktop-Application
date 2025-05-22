@@ -12,6 +12,7 @@ import AdminRegister from "./views/AdminRegister/AdminRegister";
 import AdminDashBoard from "./views/AdminDashBoard/AdminDashBoard";
 import AcceptEvent from "./views/AcceptEvent/AcceptEvent";
 import AdminEventHandling from "./views/AdminEventHandling/AdminEventHandling";
+import DeleteEvent from "./views/DeleteEvent/DeleteEvent";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="/addimageorvideos" element={<AddImagesOrVideos />} /> 
         <Route path="/viewevents" element={<ViewEvents />} /> 
         <Route path="/updateevents" element={<UpdateEvents />} /> 
+        <Route path="/deleteevent" element={<DeleteEvent />} /> 
         <Route path="/register" element={<RequestToSingUp />} /> 
         {/* <Route path="/" element={<AdminRegister />} /> */}
         <Route path="/" element={<AdminDashBoard />} />

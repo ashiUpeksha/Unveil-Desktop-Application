@@ -17,8 +17,11 @@ const Sidebar = () => {
   const isAddEventActive =
     location.pathname === "/addnewevent" || location.pathname === "/addimageorvideos";
 
-  // Check if "View Events" should be active
-  const isViewEventsActive = location.pathname === "/viewevents";
+  // Check if "View Events" should be active (also highlight on /updateevents and /deleteevent)
+  const isViewEventsActive =
+    location.pathname === "/viewevents" ||
+    location.pathname === "/updateevents" ||
+    location.pathname === "/deleteevent";
 
   return (
     <Drawer
