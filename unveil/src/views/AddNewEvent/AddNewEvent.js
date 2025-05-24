@@ -107,17 +107,29 @@ const AddNewEventPage = () => {
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
+        // 1. Call OpenCage Geocoding API with the entered venue address
+        const venueQuery = encodeURIComponent(values.venue);
+
+        const openCageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${venueQuery}&key=d626d87c3c6742b2880c16631183dd25`;
+
+        const geoResponse = await axios.get(openCageUrl);
+        // You can use geoResponse.data as needed, e.g., extract coordinates
+        // For now, just log the response
+        console.log("OpenCage Geocoding API response:", geoResponse);
+        const lat = geoResponse.data.results[0]?.geometry?.lat;
+        const lng = geoResponse.data.results[0]?.geometry?.lng;
+
         setIsUploading(true);
-        
+
         const formData = new FormData();
         selectedFiles.forEach((file) => {
-          formData.append('UploadedFiles[]', file); // Update field name to 'UploadedFiles[]' to match the backend
+          formData.append('UploadedFiles[]', file);
         });
-        
+
         // Debugging: Log FormData keys and values
-        for (let pair of formData.entries()) {
+        /* for (let pair of formData.entries()) {
           console.log(pair[0] + ':', pair[1]);
-        }
+        } */
         console.log("FormData before submission:", formData.getAll('media'));
         const model = {
           eventType: values.eventType,
@@ -132,6 +144,8 @@ const AddNewEventPage = () => {
           specialGuests: values.specialGuests,
           UploadedFiles: selectedFiles,
           venueAddress: values.venueAddress, 
+          latitude: lat, 
+          longitude: lng, 
         };
 
         // Retrieve the token from localStorage

@@ -181,7 +181,9 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
         contactNumber,
         description,
         specialGuests,
-        venueAddress // <-- get from req.body
+        venueAddress,
+        latitude,
+        longitude
       } = req.body;
 
       // Validate date inputs
@@ -214,8 +216,10 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
           contact_number, 
           description, 
           special_guests,
-          created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          created_by,
+          latitude,
+          longitude
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING event_id`,
         [
           eventType,
@@ -231,7 +235,9 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
           contactNumber,
           description,
           specialGuests,
-          userId // Use userId from the token as createdBy
+          userId,
+          latitude,
+          longitude
         ]
       );
 
