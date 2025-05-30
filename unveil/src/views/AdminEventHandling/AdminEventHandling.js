@@ -19,6 +19,8 @@ import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const statusOptions = [
   { value: "", label: "-Select Status-" },
@@ -254,8 +256,26 @@ const AdminEventHandling = () => {
                               </span>
                             </TableCell>
                             <TableCell>
-                              {/* Placeholder for actions */}
-                              <button>View</button>
+                              <Box sx={{ display: "flex", gap: 0, alignItems: "center" }}>
+                                <EditIcon
+                                  sx={{
+                                    color: "#007AFF",
+                                    cursor: "pointer",
+                                    fontSize: 22, // Match the icon size in your screenshot
+                                    mx: 1,
+                                  }}
+                                  onClick={() => navigate("/admineventupdate", { state: { event } })}
+                                />
+                                <DeleteIcon
+                                  sx={{
+                                    color: "#FF0004",
+                                    cursor: "pointer",
+                                    fontSize: 22, // Match the icon size in your screenshot
+                                    mx: 1,
+                                  }}
+                                  onClick={() => navigate("/admindeleteevent", { state: { event } })}
+                                />
+                              </Box>
                             </TableCell>
                           </TableRow>
                         );
