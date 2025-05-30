@@ -154,6 +154,26 @@ const UpdateEventsPage = () => {
       ? getDurationString(eventStartDateTime, eventEndDateTime)
       : duration;
 
+    let latitude = null;
+    let longitude = null;
+
+    // Get new lat/lng if venue changed
+    if (venue) {
+      try {
+        const venueQuery = encodeURIComponent(venue);
+        // Use your OpenCage API key from .env (React: REACT_APP_OPENCAGE_API_KEY)
+        const openCageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${venueQuery}&key=d626d87c3c6742b2880c16631183dd25`;
+        const geoResponse = await fetch(openCageUrl);
+        const geoData = await geoResponse.json();
+        latitude = geoData.results[0]?.geometry?.lat || null;
+        longitude = geoData.results[0]?.geometry?.lng || null;
+      } catch (err) {
+        // If geocoding fails, keep lat/lng as null
+        latitude = null;
+        longitude = null;
+      }
+    }
+
     try {
       const res = await fetch(`http://localhost:3000/api/event/${eventId}`, {
         method: "PUT",
@@ -172,7 +192,9 @@ const UpdateEventsPage = () => {
           entrance_fee: entranceFee,
           contact_number: contactNumber,
           description,
-          special_guests: specialGuests
+          special_guests: specialGuests,
+          latitude,
+          longitude
         })
       });
       const data = await res.json();
