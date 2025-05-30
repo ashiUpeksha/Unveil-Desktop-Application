@@ -520,7 +520,8 @@ router.put('/event/:eventId', async (req, res) => {
         description = $11,
         special_guests = $12,
         latitude = $13,
-        longitude = $14
+        longitude = $14,
+        status = 1 -- Reset status to 1 (Pending) on update
         WHERE event_id = $15
         RETURNING *`,
       [
