@@ -14,6 +14,11 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import { useNavigate } from "react-router-dom";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import Select from "@mui/material/Select";
+import TextField from "@mui/material/TextField";
 
 const ViewEvents = () => {
   const [userId, setUserId] = useState(""); 
@@ -143,65 +148,120 @@ const ViewEvents = () => {
               <Typography variant="subtitle1" gutterBottom>
                 Status
               </Typography>
-              <select
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "5px",
-                  border: "1px solid #ccc",
-                  marginTop: "5px",
-                }}
-                value={filters.status || ""}
-                onChange={e => handleFilterChange("status", e.target.value)}
-              >
-                <option value="">-Select Status-</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
+              <FormControl fullWidth>
+                <Select
+                  variant="outlined"
+                  value={filters.status || ""}
+                  displayEmpty
+                  onChange={e => handleFilterChange("status", e.target.value)}
+                  sx={{
+                    background: "#fff",
+                    height: 50,
+                    borderRadius: "8px",
+                    ".MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#ccc",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#863F55",
+                    },
+                    fontSize: 16,
+                    pl: 2,
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        borderRadius: "8px",
+                        mt: 1,
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="">-Select Status-</MenuItem>
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="Approved">Approved</MenuItem>
+                  <MenuItem value="Rejected">Rejected</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
             {/* Event Type */}
             <Box>
               <Typography variant="subtitle1" gutterBottom>
                 Event Type
               </Typography>
-              <select
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "5px",
-                  border: "1px solid #ccc",
-                  marginTop: "5px",
-                }}
-                value={filters.eventType}
-                onChange={e => handleFilterChange("eventType", e.target.value)}
-              >
-                <option value="">-Select Event Type-</option>
-                {eventTypes.map((opt, i) => (
-                  <option key={i} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+              <FormControl fullWidth>
+                <Select
+                  variant="outlined"
+                  value={filters.eventType}
+                  displayEmpty
+                  onChange={e => handleFilterChange("eventType", e.target.value)}
+                  sx={{
+                    background: "#fff",
+                    height: 50,
+                    borderRadius: "8px",
+                    ".MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#ccc",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#863F55",
+                    },
+                    fontSize: 16,
+                    pl: 2,
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        borderRadius: "8px",
+                        mt: 1,
+                      },
+                    },
+                  }}
+                >
+                  <MenuItem value="">-Select Event Type-</MenuItem>
+                  {eventTypes.map((opt, i) => (
+                    <MenuItem key={i} value={opt}>
+                      {opt}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Box>
             {/* Event Name */}
             <Box>
               <Typography variant="subtitle1" gutterBottom>
                 Event Name
               </Typography>
-              <input
-                type="text"
+              <TextField
+                fullWidth
                 placeholder="Event Name"
-                style={{
-                  width: "100%",
-                  padding: "10px",
-                  borderRadius: "5px",
-                  border: "1px solid #ccc",
-                  marginTop: "5px",
-                  boxSizing: "border-box"
-                }}
                 value={filters.eventName}
                 onChange={e => handleFilterChange("eventName", e.target.value)}
+                variant="outlined"
+                sx={{
+                  background: "#fff",
+                  height: 50,
+                  borderRadius: "8px",
+                  "& .MuiOutlinedInput-root": {
+                    height: 50,
+                    borderRadius: "8px",
+                    fontSize: 16,
+                    pl: 2,
+                    "& fieldset": {
+                      borderColor: "#ccc",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#863F55",
+                    },
+                  },
+                }}
+                InputProps={{
+                  style: {
+                    height: 50,
+                    borderRadius: "8px",
+                    fontSize: 16,
+                    paddingLeft: 16,
+                    background: "#fff",
+                  },
+                }}
               />
             </Box>
           </Box>
