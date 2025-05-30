@@ -13,6 +13,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 const inputStyle = {
   width: '100%',
@@ -59,6 +61,9 @@ const DeleteEventPage = () => {
   const [dialogSuccess, setDialogSuccess] = useState(false);
   const [dialogMessage, setDialogMessage] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  const [resultDialogMsg, setResultDialogMsg] = useState("");
+  const [resultDialogType, setResultDialogType] = useState(""); // "success" or "error"
 
   // Get eventId from location.state (when navigating from ViewEvents)
   useEffect(() => {
@@ -155,26 +160,28 @@ const DeleteEventPage = () => {
         headers: { "Content-Type": "application/json" }
       });
       if (res.ok) {
-        setDialogSuccess(true);
-        setDialogMessage("Event deleted successfully.");
+        setResultDialogMsg("Event deleted successfully.");
+        setResultDialogType("success");
+        setResultDialogOpen(true);
       } else {
         const data = await res.json();
-        setDialogSuccess(false);
-        setDialogMessage(data.error || "Failed to delete event.");
+        setResultDialogMsg(data.error || "Failed to delete event.");
+        setResultDialogType("error");
+        setResultDialogOpen(true);
       }
     } catch (err) {
-      setDialogSuccess(false);
-      setDialogMessage("Failed to delete event.");
+      setResultDialogMsg("Failed to delete event.");
+      setResultDialogType("error");
+      setResultDialogOpen(true);
     }
-    setDialogOpen(true);
   };
 
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    if (dialogSuccess) {
-      navigate("/viewevents");
-    }
-  };
+  // const handleDialogClose = () => {
+  //   setDialogOpen(false);
+  //   if (dialogSuccess) {
+  //     navigate("/viewevents");
+  //   }
+  // };
 
   return (
     <Box sx={{ display: "flex" }}>
@@ -462,22 +469,35 @@ const DeleteEventPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      {/* Dialog for delete result */}
-      <Dialog open={dialogOpen} onClose={handleDialogClose}>
-        <DialogTitle sx={{ textAlign: "center" }}>
-          {dialogSuccess ? (
-            <CheckCircleOutlineIcon sx={{ color: "#4caf50", fontSize: 60 }} />
-          ) : (
-            <ErrorOutlineIcon sx={{ color: "#FF0004", fontSize: 60 }} />
+      {/* Result Dialog for success/error */}
+      <Dialog
+        open={resultDialogOpen}
+        onClose={() => {
+          setResultDialogOpen(false);
+          if (resultDialogType === "success") {
+            navigate("/viewevents");
+          }
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Status</DialogTitle>
+        <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {resultDialogType === "success" && (
+            <CheckCircleIcon sx={{ color: "#00C853", fontSize: 40 }} />
           )}
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="h6" sx={{ textAlign: "center" }}>
-            {dialogMessage}
-          </Typography>
+          {resultDialogType === "error" && (
+            <CancelIcon sx={{ color: "#FF1744", fontSize: 40 }} />
+          )}
+          <Typography>{resultDialogMsg}</Typography>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: "center" }}>
-          <Button onClick={handleDialogClose} variant="contained" autoFocus>
+        <DialogActions>
+          <Button onClick={() => {
+            setResultDialogOpen(false);
+            if (resultDialogType === "success") {
+              navigate("/viewevents");
+            }
+          }} autoFocus>
             OK
           </Button>
         </DialogActions>

@@ -306,7 +306,7 @@ router.get('/events', async (req, res) => {
 // New endpoint to get all events (for admin event handling)
 router.get('/allEvents', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM addnewevent ORDER BY event_id DESC');
+    const result = await pool.query('SELECT * FROM addnewevent WHERE is_active = true ORDER BY event_id DESC');
     res.json({ events: result.rows });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch events" });
@@ -499,7 +499,9 @@ router.put('/event/:eventId', async (req, res) => {
     entrance_fee,
     contact_number,
     description,
-    special_guests
+    special_guests,
+    latitude,
+    longitude
   } = req.body;
 
   try {
@@ -516,9 +518,12 @@ router.put('/event/:eventId', async (req, res) => {
         entrance_fee = $9,
         contact_number = $10,
         description = $11,
-        special_guests = $12
-      WHERE event_id = $13
-      RETURNING *`,
+        special_guests = $12,
+        latitude = $13,
+        longitude = $14,
+        status = 1 -- Reset status to 1 (Pending) on update
+        WHERE event_id = $15
+        RETURNING *`,
       [
         eventName,
         event_venue,
@@ -532,6 +537,8 @@ router.put('/event/:eventId', async (req, res) => {
         contact_number,
         description,
         special_guests,
+        latitude,
+        longitude,
         eventId
       ]
     );
