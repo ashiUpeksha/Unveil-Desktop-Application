@@ -484,5 +484,66 @@ router.put('/event/:eventId/deactivate', async (req, res) => {
   }
 });
 
+// Update event by event_id
+router.put('/event/:eventId', async (req, res) => {
+  const { eventId } = req.params;
+  const {
+    eventName,
+    event_venue,
+    event_venue_address,
+    event_start_date,
+    event_start_time,
+    event_end_date,
+    event_end_time,
+    event_duration,
+    entrance_fee,
+    contact_number,
+    description,
+    special_guests
+  } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE addnewevent SET
+        event_name = $1,
+        event_venue = $2,
+        event_venue_address = $3,
+        event_start_date = $4,
+        event_start_time = $5,
+        event_end_date = $6,
+        event_end_time = $7,
+        event_duration = $8,
+        entrance_fee = $9,
+        contact_number = $10,
+        description = $11,
+        special_guests = $12
+      WHERE event_id = $13
+      RETURNING *`,
+      [
+        eventName,
+        event_venue,
+        event_venue_address,
+        event_start_date,
+        event_start_time,
+        event_end_date,
+        event_end_time,
+        event_duration,
+        entrance_fee,
+        contact_number,
+        description,
+        special_guests,
+        eventId
+      ]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    res.json({ success: true, event: result.rows[0] });
+  } catch (err) {
+    console.error('Error updating event:', err);
+    res.status(500).json({ error: "Failed to update event" });
+  }
+});
+
 
 module.exports = router;
