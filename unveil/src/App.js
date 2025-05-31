@@ -13,8 +13,12 @@ import AdminDashBoard from "./views/AdminDashBoard/AdminDashBoard";
 import AcceptEvent from "./views/AcceptEvent/AcceptEvent";
 import AdminEventHandling from "./views/AdminEventHandling/AdminEventHandling";
 import DeleteEvent from "./views/DeleteEvent/DeleteEvent";
+
 import AdminDeleteEvent from "./views/AdminDeleteEvent/AdminDeleteEvent";
 import AdminEventUpdate from "./views/AdminEventUpdate/AdminEventUpdate";
+=======
+import UserRole from "./views/Roles/UserRole";
+import UpdateUser from "./views/Users/UpdateUser";
 
 function App() {
   return (
@@ -34,8 +38,13 @@ function App() {
         <Route path="/eventorganizerdashboard" element={<EventOrganizerDashBoard />} />
         <Route path="/admineventhandling" element={<AdminEventHandling />} />
         <Route path="/acceptEvent/:eventId" element={<AcceptEvent />} />
+
         <Route path="/admindeleteevent" element={<AdminDeleteEvent />} />
         <Route path="/admineventupdate" element={<AdminEventUpdate />} />
+=======
+        <Route path="/userrole" element={<UserRole />} />
+        <Route path="/updateuser" element={<UpdateUser />} />
+
       </Routes>
     </Router>
   );
