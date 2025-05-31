@@ -1,10 +1,100 @@
-import { Grid, Box, Typography, TextField, MenuItem, Select, FormControl, Checkbox, ListItemText, Button } from "@mui/material";
-import { useState, Fragment } from "react";
+import React, { useState, Fragment, useEffect } from 'react';
 import * as Yup from 'yup';
-import { Formik } from 'formik';
-import { useEffect } from 'react';
-import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
+import { Grid, Box, Typography, TextField, MenuItem, Select, FormControl, Checkbox, ListItemText, Button } from "@mui/material";
+import { Formik } from 'formik';
+import { Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+
+// Styles
+const containerStyle = {
+  display: 'flex',
+  height: '100vh',
+  width: '100%',
+};
+
+const leftColStyle = {
+  flex: 1,
+  background: '#000',
+  color: '#fff',
+  height: '100vh', // Ensure same height as rightColStyle
+  minHeight: 0,    // Allow flexbox to control height
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '20px',
+  boxSizing: 'border-box', // Ensure padding doesn't affect height
+  overflow: 'auto',        // Allow scrolling if content overflows
+};
+
+const rightColStyle = {
+  flex: 1,
+  background: '#FDF8F8',
+  height: '100vh',
+  minHeight: 0,
+  padding: '20px',
+  paddingBottom: '20px', // Add extra bottom padding
+  overflowY: 'auto',
+  boxSizing: 'border-box',
+};
+
+const logoStyle = {
+  width: '300px',
+  height: 'auto',
+  marginBottom: '20px'
+};
+
+const unveilTextStyle = {
+  fontFamily: 'Sansita One',
+  fontSize: '3rem',
+  fontWeight: 'bold',
+  marginTop: '-10px',
+  background: 'linear-gradient(90deg, #FFD874, #FF407A)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent',
+  letterSpacing: '0.3rem'
+};
+
+const taglineStyle = {
+  fontSize: '2rem',
+  fontWeight: 'bold',
+  marginTop: '-10px',
+  background: 'linear-gradient(90deg, #FFD874, #FF407A)',
+  WebkitBackgroundClip: 'text',
+  WebkitTextFillColor: 'transparent'
+};
+
+const inputLabelStyle = {
+  marginBottom: '8px',
+  color: 'rgb(122, 121, 121)',
+  fontWeight: 'bold',
+  fontSize: '18px'
+};
+
+const inputStyle = {
+  width: '100%',
+  borderRadius: '10px'
+};
+
+const buttonStyle = {
+  width: '100%',
+  borderRadius: '10px',
+  textTransform: 'none',
+  fontSize: '16px',
+  color: 'rgb(0, 0, 0)',
+  fontWeight: 'bold',
+  padding: '10px'
+};
+
+const linkStyle = {
+  color: "rgb(25, 118, 210)",
+  background: "none",
+  border: "none",
+  padding: 0,
+  font: "inherit",
+  cursor: "pointer",
+  textDecoration: 'underline'
+};
 
 export default function TwoPartLayout() {
   const [options, setOptions] = useState([]);
@@ -19,7 +109,7 @@ export default function TwoPartLayout() {
       try {
         const response = await fetch("http://localhost:3000/api/eventTypes");
         const data = await response.json();
-        setOptions(data); // Store the array of event types with id and name
+        setOptions(data);
       } catch (error) {
         console.error('Error fetching event types:', error);
       }
@@ -40,8 +130,6 @@ export default function TwoPartLayout() {
         password: values.password
       };
 
-      console.log("Submitting Data:", model);
-
       const response = await fetch("http://localhost:3000/api/requestToRegister", {
         method: "POST",
         headers: {
@@ -55,19 +143,14 @@ export default function TwoPartLayout() {
       }
 
       const result = await response.json();
-      console.log("Submission Success:", result);
-
       setSuccessMessage("✅ Form submitted successfully!");
       setSuccessDialogOpen(true);
-
       resetForm();
     } catch (error) {
-      console.error("Submission Error:", error);
       setErrorMessage(error.message || "Error submitting form. Please try again.");
       setErrorDialogOpen(true);
     }
   }
-  
 
   return (
     <Fragment>
@@ -106,23 +189,17 @@ export default function TwoPartLayout() {
       >
         {({ errors, handleBlur, handleSubmit, touched, values, setFieldValue, handleChange }) => (
           <form onSubmit={handleSubmit}>
-            <Grid container sx={{ minHeight: "100vh", overflow: "hidden" }}>
-              
+            <div style={containerStyle}>
               {/* Left Side */}
-              <Grid item xs={6}>
-                <Box sx={{ bgcolor: "#000000", height: "100%", display: "flex", justifyContent: "center", alignItems: "center", flexDirection: "column", p: 2 }}>
-                  <img src="/static/logo.png" alt="Logo" style={{ width: "300px", height: "auto", marginBottom: "20px" }} />
-                  <Typography variant="h2" sx={{ background: "linear-gradient(90deg, #FFD874, #FF407A)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontFamily: "Sansita One", fontWeight: "bold", mt: -1 }}>
-                    U  n  v  e  i  l
-                  </Typography>
-                  <Typography variant="h4" sx={{ background: "linear-gradient(90deg, #FFD874, #FF407A)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", fontWeight: "bold", mt: -1 }}>
-                    Only for party lovers...
-                  </Typography>
-                </Box>
-              </Grid>
+              <div style={leftColStyle}>
+                <img src="/static/logo.png" alt="Logo" style={logoStyle} />
+                <div style={unveilTextStyle}>U  n  v  e  i  l</div>
+                <div style={taglineStyle}>Only for party lovers...</div>
+              </div>
 
-              {/* Right Side */}
-              <Grid item xs={6}>
+              <div style={rightColStyle}>
+                {/* Right Side */}
+              {/* <Grid item xs={6}> */}
                 <Box sx={{ bgcolor: "#FDF8F8", height: "100%", p: 8 }}>
                   <Typography variant="h3" gutterBottom>Request to Sign In</Typography>
 
@@ -361,8 +438,10 @@ export default function TwoPartLayout() {
                     </DialogActions>
                   </Dialog>
                 </Box>
-              </Grid>
-            </Grid>
+              {/* </Grid> */}
+              </div>
+              
+            </div>
           </form>
         )}
       </Formik>

@@ -5,7 +5,7 @@ import AddNewEvent from "./views/AddNewEvent/AddNewEvent";
 import AddImagesOrVideos from "./views/AddImagesOrVideos/AddImagesOrVideos";
 import ViewEvents from "./views/ViewEvents/ViewEvents";
 import UpdateEvents from "./views/UpdateEvents/UpdateEvents";
-import RequestToSingUp from "./views/RequestToSignUp/RequestToSignUp";
+import RequestToSignUp from "./views/RequestToSignUp/RequestToSignUp";
 import Login from "./views/LoginPage/LoginPage";
 import ResetPassword from "./views/ResetPassword/ResetPassword";
 import AdminRegister from "./views/AdminRegister/AdminRegister";
@@ -30,7 +30,7 @@ function App() {
         <Route path="/viewevents" element={<ViewEvents />} /> 
         <Route path="/updateevents" element={<UpdateEvents />} /> 
         <Route path="/deleteevent" element={<DeleteEvent />} /> 
-        <Route path="/register" element={<RequestToSingUp />} /> 
+        <Route path="/register" element={<RequestToSignUp />} /> 
         {/* <Route path="/" element={<AdminRegister />} /> */}
         <Route path="/" element={<AdminDashBoard />} />
         <Route path="/admindashboard" element={<AdminDashBoard />} />
