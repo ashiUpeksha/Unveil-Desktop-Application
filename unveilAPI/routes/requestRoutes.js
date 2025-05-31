@@ -552,5 +552,149 @@ router.put('/event/:eventId', async (req, res) => {
   }
 });
 
+// New endpoint: Admin add event with organization check
+router.post('/adminAddEventWithOrgCheck', (req, res) => {
+  upload(req, res, async function (err) {
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(400).json({ error: err.message });
+    }
+
+    try {
+      // Extract organizationName from form data
+      const {
+        organizationName,
+        eventType,
+        eventName,
+        venue,
+        startDateTime,
+        endDateTime,
+        duration,
+        entranceFee,
+        contactNumber,
+        description,
+        specialGuests,
+        venueAddress,
+        latitude,
+        longitude
+      } = req.body;
+
+      // Check if organization exists in users table
+      const orgResult = await pool.query(
+        'SELECT user_id FROM users WHERE organization_name = $1',
+        [organizationName]
+      );
+
+      if (orgResult.rows.length === 0) {
+        return res.status(400).json({ 
+          success: false,
+          error: "This organization is not registered in the system yet."
+        });
+      }
+
+      const userId = orgResult.rows[0].user_id;
+
+      // Validate date inputs
+      const startDate = new Date(startDateTime);
+      const endDate = new Date(endDateTime);
+
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ error: "Invalid date format for startDateTime or endDateTime" });
+      }
+
+      // Format dates
+      const formattedStartDate = startDate.toISOString().split('T')[0];
+      const formattedStartTime = startDate.toTimeString().split(' ')[0];
+      const formattedEndDate = endDate.toISOString().split('T')[0];
+      const formattedEndTime = endDate.toTimeString().split(' ')[0];
+
+      // Insert event data into the database
+      const result = await pool.query(
+        `INSERT INTO addnewevent (
+          event_type, 
+          event_name, 
+          event_venue, 
+          event_venue_address,  
+          event_start_date, 
+          event_start_time, 
+          event_end_date, 
+          event_end_time, 
+          event_duration, 
+          entrance_fee, 
+          contact_number, 
+          description, 
+          special_guests,
+          created_by,
+          latitude,
+          longitude
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        RETURNING event_id`,
+        [
+          eventType,
+          eventName,
+          venue,
+          venueAddress,
+          formattedStartDate,
+          formattedStartTime,
+          formattedEndDate,
+          formattedEndTime,
+          duration,
+          entranceFee,
+          contactNumber,
+          description,
+          specialGuests,
+          userId,
+          latitude,
+          longitude
+        ]
+      );
+
+      const eventId = result.rows[0].event_id;
+      const eventFolder = path.join(__dirname, '../../public/event_Image', eventId.toString());
+
+      // Create event folder if it doesn't exist
+      if (!fs.existsSync(eventFolder)) {
+        fs.mkdirSync(eventFolder, { recursive: true });
+      }
+
+      // Process uploaded files
+      const finalMediaUrls = [];
+      if (req.files && req.files.length > 0) {
+        for (const file of req.files) {
+          const oldPath = file.path; // Temporary path from upload
+          const newPath = path.join(eventFolder, file.filename);
+
+          // Move file from temp to event folder
+          fs.renameSync(oldPath, newPath);
+
+          // Store relative path in database
+          finalMediaUrls.push(`event_Image/${eventId}/${file.filename}`);
+        }
+      }
+
+      // Update event with final media URLs
+      for (const mediaUrl of finalMediaUrls) {
+        await pool.query(
+          'INSERT INTO eventimage (event_id, images_and_videos, created_by) VALUES ($1, $2, $3)',
+          [eventId, mediaUrl, userId]
+        );
+      }
+
+      res.status(201).json({ 
+        success: true,
+        message: "Event added successfully!",
+        eventId: eventId,
+        mediaUrls: finalMediaUrls
+      });
+    } catch (error) {
+      console.error('Error adding event:', error);
+      res.status(500).json({ 
+        success: false,
+        error: 'Internal server error' 
+      });
+    }
+  });
+});
+
 
 module.exports = router;
