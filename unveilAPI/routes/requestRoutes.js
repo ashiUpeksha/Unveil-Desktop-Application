@@ -696,5 +696,44 @@ router.post('/adminAddEventWithOrgCheck', (req, res) => {
   });
 });
 
+// Get user profile by userId (including event types)
+router.get('/userProfile/:userId', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    // Fetch user details
+    const userResult = await pool.query(
+      `SELECT user_id, organization_name, contact_number, email, address, description, username
+       FROM users WHERE user_id = $1`,
+      [userId]
+    );
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const user = userResult.rows[0];
+
+    // Fetch event_type_ids from user_eventTypes
+    const userEventTypesResult = await pool.query(
+      `SELECT event_type_id FROM user_eventTypes WHERE created_by = $1`,
+      [userId]
+    );
+    const eventTypeIds = userEventTypesResult.rows.map(row => row.event_type_id);
+
+    // Fetch event type names from eventtypes table
+    let eventTypes = [];
+    if (eventTypeIds.length > 0) {
+      const eventTypesResult = await pool.query(
+        `SELECT event_type_id, event_type_name FROM eventtypes WHERE event_type_id = ANY($1::int[]) AND is_active = true`,
+        [eventTypeIds]
+      );
+      eventTypes = eventTypesResult.rows; // [{event_type_id, event_type_name}, ...]
+    }
+    user.eventTypes = eventTypes;
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch user profile" });
+  }
+});
+
 
 module.exports = router;
