@@ -181,7 +181,9 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
         contactNumber,
         description,
         specialGuests,
-        venueAddress // <-- get from req.body
+        venueAddress,
+        latitude,
+        longitude
       } = req.body;
 
       // Validate date inputs
@@ -214,8 +216,10 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
           contact_number, 
           description, 
           special_guests,
-          created_by
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          created_by,
+          latitude,
+          longitude
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         RETURNING event_id`,
         [
           eventType,
@@ -231,7 +235,9 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
           contactNumber,
           description,
           specialGuests,
-          userId // Use userId from the token as createdBy
+          userId,
+          latitude,
+          longitude
         ]
       );
 
@@ -300,7 +306,7 @@ router.get('/events', async (req, res) => {
 // New endpoint to get all events (for admin event handling)
 router.get('/allEvents', async (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM addnewevent ORDER BY event_id DESC');
+    const result = await pool.query('SELECT * FROM addnewevent WHERE is_active = true ORDER BY event_id DESC');
     res.json({ events: result.rows });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch events" });
@@ -475,6 +481,74 @@ router.put('/event/:eventId/deactivate', async (req, res) => {
     res.json({ success: true, event: result.rows[0] });
   } catch (err) {
     res.status(500).json({ error: "Failed to deactivate event" });
+  }
+});
+
+// Update event by event_id
+router.put('/event/:eventId', async (req, res) => {
+  const { eventId } = req.params;
+  const {
+    eventName,
+    event_venue,
+    event_venue_address,
+    event_start_date,
+    event_start_time,
+    event_end_date,
+    event_end_time,
+    event_duration,
+    entrance_fee,
+    contact_number,
+    description,
+    special_guests,
+    latitude,
+    longitude
+  } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE addnewevent SET
+        event_name = $1,
+        event_venue = $2,
+        event_venue_address = $3,
+        event_start_date = $4,
+        event_start_time = $5,
+        event_end_date = $6,
+        event_end_time = $7,
+        event_duration = $8,
+        entrance_fee = $9,
+        contact_number = $10,
+        description = $11,
+        special_guests = $12,
+        latitude = $13,
+        longitude = $14,
+        status = 1 -- Reset status to 1 (Pending) on update
+        WHERE event_id = $15
+        RETURNING *`,
+      [
+        eventName,
+        event_venue,
+        event_venue_address,
+        event_start_date,
+        event_start_time,
+        event_end_date,
+        event_end_time,
+        event_duration,
+        entrance_fee,
+        contact_number,
+        description,
+        special_guests,
+        latitude,
+        longitude,
+        eventId
+      ]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+    res.json({ success: true, event: result.rows[0] });
+  } catch (err) {
+    console.error('Error updating event:', err);
+    res.status(500).json({ error: "Failed to update event" });
   }
 });
 

@@ -45,7 +45,7 @@ const validationSchema = Yup.object({
   venueAddress: Yup.string().required("Event venue address is required"), 
 });
 
-const AddNewEventPage = () => {
+const AdminAddNewEventPage = () => {
   const navigate = useNavigate();
   const [eventTypes, setEventTypes] = useState([]);
   const [openMediaDialog, setOpenMediaDialog] = useState(false);
@@ -655,4 +655,4 @@ const AddNewEventPage = () => {
   );
 };
 
-export default AddNewEventPage;
+export default AdminAddNewEventPage;

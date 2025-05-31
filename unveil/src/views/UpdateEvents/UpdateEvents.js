@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Button } from "@mui/material";
+import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import {
@@ -51,6 +53,11 @@ const UpdateEventsPage = () => {
   const [description, setDescription] = useState("");
   const [specialGuests, setSpecialGuests] = useState("");
   const [media, setMedia] = useState([]);
+
+  // Dialog state
+  const [resultDialogOpen, setResultDialogOpen] = useState(false);
+  const [resultDialogMsg, setResultDialogMsg] = useState("");
+  const [resultDialogType, setResultDialogType] = useState(""); // "success" or "error"
 
   // Get eventId from location.state (when navigating from ViewEvents)
   useEffect(() => {
@@ -133,6 +140,81 @@ const UpdateEventsPage = () => {
   const eventStartDateTime = getCombinedDateTime(startDate, startTime);
   const eventEndDateTime = getCombinedDateTime(endDate, endTime);
 
+  // Add update handler
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!eventId) return;
+
+    // Combine date and time for start and end
+    const startDateStr = startDate ? dayjs(startDate).format('YYYY-MM-DD') : null;
+    const startTimeStr = startTime ? dayjs(startTime).format('HH:mm:ss') : null;
+    const endDateStr = endDate ? dayjs(endDate).format('YYYY-MM-DD') : null;
+    const endTimeStr = endTime ? dayjs(endTime).format('HH:mm:ss') : null;
+    const durationStr = eventStartDateTime && eventEndDateTime
+      ? getDurationString(eventStartDateTime, eventEndDateTime)
+      : duration;
+
+    let latitude = null;
+    let longitude = null;
+
+    // Get new lat/lng if venue changed
+    if (venue) {
+      try {
+        const venueQuery = encodeURIComponent(venue);
+        // Use your OpenCage API key from .env (React: REACT_APP_OPENCAGE_API_KEY)
+        const openCageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${venueQuery}&key=d626d87c3c6742b2880c16631183dd25`;
+        const geoResponse = await fetch(openCageUrl);
+        const geoData = await geoResponse.json();
+        latitude = geoData.results[0]?.geometry?.lat || null;
+        longitude = geoData.results[0]?.geometry?.lng || null;
+      } catch (err) {
+        // If geocoding fails, keep lat/lng as null
+        latitude = null;
+        longitude = null;
+      }
+    }
+
+    try {
+      const res = await fetch(`http://localhost:3000/api/event/${eventId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          eventName,
+          event_venue: venue,
+          event_venue_address: venueAddress,
+          event_start_date: startDateStr,
+          event_start_time: startTimeStr,
+          event_end_date: endDateStr,
+          event_end_time: endTimeStr,
+          event_duration: durationStr,
+          entrance_fee: entranceFee,
+          contact_number: contactNumber,
+          description,
+          special_guests: specialGuests,
+          latitude,
+          longitude
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setResultDialogMsg("Event updated successfully!");
+        setResultDialogType("success");
+        setResultDialogOpen(true);
+      } else {
+        setResultDialogMsg(data.error || "Failed to update event.");
+        setResultDialogType("error");
+        setResultDialogOpen(true);
+      }
+    } catch (err) {
+      setResultDialogMsg("Failed to update event.");
+      setResultDialogType("error");
+      setResultDialogOpen(true);
+      console.error(err);
+    }
+  };
+
   return (
     <Box sx={{ display: "flex" }}>
       <Navbar />
@@ -140,7 +222,7 @@ const UpdateEventsPage = () => {
       <Box component="main" sx={{ flexGrow: 1, backgroundColor: "#C6C6C6", p: 3, mt: 8, minHeight: "100vh" }}>
         <Box sx={{ backgroundColor: "white", p: 3, borderRadius: 2, boxShadow: 3 }}>
           <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Update Event</Typography>
-          <form>
+          <form onSubmit={handleUpdate}>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
               {/* Event Type */}
               <Box>
@@ -345,6 +427,67 @@ const UpdateEventsPage = () => {
               </Box>
             </Box>
           </form>
+          {/* Result Dialog for success/error */}
+          <Dialog
+            open={resultDialogOpen}
+            onClose={() => {
+              setResultDialogOpen(false);
+              if (resultDialogType === "success") {
+                // Reset all fields on success
+                setEventType("");
+                setEventName("");
+                setVenue("");
+                setVenueAddress("");
+                setStartDate(null);
+                setStartTime(null);
+                setEndDate(null);
+                setEndTime(null);
+                setDuration("");
+                setEntranceFee("");
+                setContactNumber("");
+                setDescription("");
+                setSpecialGuests("");
+                setMedia([]);
+              }
+            }}
+            maxWidth="xs"
+            fullWidth
+          >
+            <DialogTitle>Status</DialogTitle>
+            <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {resultDialogType === "success" && (
+                <CheckCircleIcon sx={{ color: "#00C853", fontSize: 40 }} />
+              )}
+              {resultDialogType === "error" && (
+                <CancelIcon sx={{ color: "#FF1744", fontSize: 40 }} />
+              )}
+              <Typography>{resultDialogMsg}</Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => {
+                setResultDialogOpen(false);
+                if (resultDialogType === "success") {
+                  // Reset all fields on success
+                  setEventType("");
+                  setEventName("");
+                  setVenue("");
+                  setVenueAddress("");
+                  setStartDate(null);
+                  setStartTime(null);
+                  setEndDate(null);
+                  setEndTime(null);
+                  setDuration("");
+                  setEntranceFee("");
+                  setContactNumber("");
+                  setDescription("");
+                  setSpecialGuests("");
+                  setMedia([]);
+                }
+              }} autoFocus>
+                OK
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Box>
       </Box>
     </Box>

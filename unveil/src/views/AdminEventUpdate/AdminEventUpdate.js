@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
-import Navbar from '../../components/Navbar';
-import Sidebar from '../../components/Sidebar';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import AdminNavbar from '../../components/AdminNavbar';
+import AdminSidebar from '../../components/AdminSidebar';
 import {
   LocalizationProvider,
   DateTimePicker,
@@ -9,12 +11,7 @@ import {
 } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
-import { useLocation, useNavigate } from "react-router-dom";
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import WarningAmberIcon from '@mui/icons-material/WarningAmber';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
+import { useLocation } from "react-router-dom";
 
 const inputStyle = {
   width: '100%',
@@ -37,9 +34,8 @@ const textareaStyle = {
   resize: 'vertical',
 };
 
-const DeleteEventPage = () => {
+const AdminUpdateEventsPage = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [eventId, setEventId] = useState(null);
 
   // Form fields state
@@ -57,10 +53,8 @@ const DeleteEventPage = () => {
   const [description, setDescription] = useState("");
   const [specialGuests, setSpecialGuests] = useState("");
   const [media, setMedia] = useState([]);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogSuccess, setDialogSuccess] = useState(false);
-  const [dialogMessage, setDialogMessage] = useState("");
-  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  // Dialog state
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [resultDialogMsg, setResultDialogMsg] = useState("");
   const [resultDialogType, setResultDialogType] = useState(""); // "success" or "error"
@@ -146,51 +140,89 @@ const DeleteEventPage = () => {
   const eventStartDateTime = getCombinedDateTime(startDate, startTime);
   const eventEndDateTime = getCombinedDateTime(endDate, endTime);
 
-  const handleDelete = async (e) => {
+  // Add update handler
+  const handleUpdate = async (e) => {
     e.preventDefault();
     if (!eventId) return;
-    setConfirmOpen(true);
-  };
 
-  const handleConfirmDelete = async () => {
-    setConfirmOpen(false);
+    // Combine date and time for start and end
+    const startDateStr = startDate ? dayjs(startDate).format('YYYY-MM-DD') : null;
+    const startTimeStr = startTime ? dayjs(startTime).format('HH:mm:ss') : null;
+    const endDateStr = endDate ? dayjs(endDate).format('YYYY-MM-DD') : null;
+    const endTimeStr = endTime ? dayjs(endTime).format('HH:mm:ss') : null;
+    const durationStr = eventStartDateTime && eventEndDateTime
+      ? getDurationString(eventStartDateTime, eventEndDateTime)
+      : duration;
+
+    let latitude = null;
+    let longitude = null;
+
+    // Get new lat/lng if venue changed
+    if (venue) {
+      try {
+        const venueQuery = encodeURIComponent(venue);
+        // Use your OpenCage API key from .env (React: REACT_APP_OPENCAGE_API_KEY)
+        const openCageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${venueQuery}&key=d626d87c3c6742b2880c16631183dd25`;
+        const geoResponse = await fetch(openCageUrl);
+        const geoData = await geoResponse.json();
+        latitude = geoData.results[0]?.geometry?.lat || null;
+        longitude = geoData.results[0]?.geometry?.lng || null;
+      } catch (err) {
+        // If geocoding fails, keep lat/lng as null
+        latitude = null;
+        longitude = null;
+      }
+    }
+
     try {
-      const res = await fetch(`http://localhost:3000/api/event/${eventId}/deactivate`, {
+      const res = await fetch(`http://localhost:3000/api/event/${eventId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          eventName,
+          event_venue: venue,
+          event_venue_address: venueAddress,
+          event_start_date: startDateStr,
+          event_start_time: startTimeStr,
+          event_end_date: endDateStr,
+          event_end_time: endTimeStr,
+          event_duration: durationStr,
+          entrance_fee: entranceFee,
+          contact_number: contactNumber,
+          description,
+          special_guests: specialGuests,
+          latitude,
+          longitude
+        })
       });
-      if (res.ok) {
-        setResultDialogMsg("Event deleted successfully.");
+      const data = await res.json();
+      if (data.success) {
+        setResultDialogMsg("Event updated successfully!");
         setResultDialogType("success");
         setResultDialogOpen(true);
       } else {
-        const data = await res.json();
-        setResultDialogMsg(data.error || "Failed to delete event.");
+        setResultDialogMsg(data.error || "Failed to update event.");
         setResultDialogType("error");
         setResultDialogOpen(true);
       }
     } catch (err) {
-      setResultDialogMsg("Failed to delete event.");
+      setResultDialogMsg("Failed to update event.");
       setResultDialogType("error");
       setResultDialogOpen(true);
+      console.error(err);
     }
   };
 
-  // const handleDialogClose = () => {
-  //   setDialogOpen(false);
-  //   if (dialogSuccess) {
-  //     navigate("/viewevents");
-  //   }
-  // };
-
   return (
     <Box sx={{ display: "flex" }}>
-      <Navbar />
-      <Sidebar />
+      <AdminNavbar />
+      <AdminSidebar />
       <Box component="main" sx={{ flexGrow: 1, backgroundColor: "#C6C6C6", p: 3, mt: 8, minHeight: "100vh" }}>
         <Box sx={{ backgroundColor: "white", p: 3, borderRadius: 2, boxShadow: 3 }}>
-          <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Delete Event</Typography>
-          <form onSubmit={handleDelete}>
+          <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Update Event</Typography>
+          <form onSubmit={handleUpdate}>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
               {/* Event Type */}
               <Box>
@@ -198,10 +230,9 @@ const DeleteEventPage = () => {
                 <input
                   type="text"
                   name="eventType"
-                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
+                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed" }}
                   value={eventType}
                   readOnly
-                  disabled
                 />
               </Box>
               {/* Event Name */}
@@ -211,10 +242,9 @@ const DeleteEventPage = () => {
                   type="text"
                   name="eventName"
                   placeholder="Event Name"
-                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
+                  style={inputStyle}
                   value={eventName}
-                  readOnly
-                  disabled
+                  onChange={e => setEventName(e.target.value)}
                 />
               </Box>
               {/* Venue */}
@@ -224,10 +254,9 @@ const DeleteEventPage = () => {
                   type="text"
                   name="venue"
                   placeholder="Venue"
-                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
+                  style={inputStyle}
                   value={venue}
-                  readOnly
-                  disabled
+                  onChange={e => setVenue(e.target.value)}
                 />
               </Box>
               {/* Start Date and Time */}
@@ -236,43 +265,29 @@ const DeleteEventPage = () => {
                   <Typography variant="subtitle1">Start Date</Typography>
                   <DateTimePicker
                     value={startDate}
-                    onChange={() => {}}
+                    onChange={setStartDate}
                     views={['year', 'month', 'day']}
                     slotProps={{
                       textField: {
                         fullWidth: true,
                         placeholder: "MM/DD/YYYY",
                         size: "medium",
-                        InputProps: {
-                          readOnly: true,
-                          disabled: true,
-                          style: { backgroundColor: "#f0f0f0", cursor: "not-allowed" }
-                        },
-                        inputProps: { style: { color: "#000" } }
                       },
                     }}
-                    disabled
                   />
                 </Box>
                 <Box>
                   <Typography variant="subtitle1">Start Time</Typography>
                   <TimePicker
                     value={startTime}
-                    onChange={() => {}}
+                    onChange={setStartTime}
                     slotProps={{
                       textField: {
                         fullWidth: true,
                         placeholder: "hh:mm aa",
                         size: "medium",
-                        InputProps: {
-                          readOnly: true,
-                          disabled: true,
-                          style: { backgroundColor: "#f0f0f0", cursor: "not-allowed" }
-                        },
-                        inputProps: { style: { color: "#000" } }
                       },
                     }}
-                    disabled
                   />
                 </Box>
                 {/* End Date and Time */}
@@ -280,43 +295,29 @@ const DeleteEventPage = () => {
                   <Typography variant="subtitle1">End Date</Typography>
                   <DateTimePicker
                     value={endDate}
-                    onChange={() => {}}
+                    onChange={setEndDate}
                     views={['year', 'month', 'day']}
                     slotProps={{
                       textField: {
                         fullWidth: true,
                         placeholder: "MM/DD/YYYY",
                         size: "medium",
-                        InputProps: {
-                          readOnly: true,
-                          disabled: true,
-                          style: { backgroundColor: "#f0f0f0", cursor: "not-allowed" }
-                        },
-                        inputProps: { style: { color: "#000" } }
                       },
                     }}
-                    disabled
                   />
                 </Box>
                 <Box>
                   <Typography variant="subtitle1">End Time</Typography>
                   <TimePicker
                     value={endTime}
-                    onChange={() => {}}
+                    onChange={setEndTime}
                     slotProps={{
                       textField: {
                         fullWidth: true,
                         placeholder: "hh:mm aa",
                         size: "medium",
-                        InputProps: {
-                          readOnly: true,
-                          disabled: true,
-                          style: { backgroundColor: "#f0f0f0", cursor: "not-allowed" }
-                        },
-                        inputProps: { style: { color: "#000" } }
                       },
                     }}
-                    disabled
                   />
                 </Box>
               </LocalizationProvider>
@@ -327,9 +328,8 @@ const DeleteEventPage = () => {
                   type="text"
                   name="duration"
                   placeholder="Duration"
-                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
+                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed" }}
                   readOnly
-                  disabled
                   value={
                     eventStartDateTime && eventEndDateTime
                       ? getDurationString(eventStartDateTime, eventEndDateTime)
@@ -344,10 +344,9 @@ const DeleteEventPage = () => {
                   type="text"
                   name="entranceFee"
                   placeholder="Entrance Fee"
-                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
+                  style={inputStyle}
                   value={entranceFee}
-                  readOnly
-                  disabled
+                  onChange={e => setEntranceFee(e.target.value)}
                 />
               </Box>
               {/* Contact Number */}
@@ -357,10 +356,9 @@ const DeleteEventPage = () => {
                   type="text"
                   name="contactNumber"
                   placeholder="Contact Number"
-                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
+                  style={inputStyle}
                   value={contactNumber}
-                  readOnly
-                  disabled
+                  onChange={e => setContactNumber(e.target.value)}
                 />
               </Box>
               {/* Empty box to fill the next column */}
@@ -373,10 +371,9 @@ const DeleteEventPage = () => {
                 <textarea
                   name="venueAddress"
                   placeholder="Address of the event venue"
-                  style={{ ...textareaStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
+                  style={textareaStyle}
                   value={venueAddress}
-                  readOnly
-                  disabled
+                  onChange={e => setVenueAddress(e.target.value)}
                 />
               </Box>
               <Box>
@@ -384,10 +381,9 @@ const DeleteEventPage = () => {
                 <textarea
                   name="description"
                   placeholder="Description"
-                  style={{ ...textareaStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
+                  style={textareaStyle}
                   value={description}
-                  readOnly
-                  disabled
+                  onChange={e => setDescription(e.target.value)}
                 />
               </Box>
               <Box>
@@ -395,10 +391,9 @@ const DeleteEventPage = () => {
                 <textarea
                   name="specialGuests"
                   placeholder="Special Guests"
-                  style={{ ...textareaStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed", color: "#000" }}
+                  style={textareaStyle}
                   value={specialGuests}
-                  readOnly
-                  disabled
+                  onChange={e => setSpecialGuests(e.target.value)}
                 />
               </Box>
               {/* Images and Videos Field */}
@@ -413,11 +408,11 @@ const DeleteEventPage = () => {
                     {media.map((url, idx) => (
                       <div key={idx}>
                         {url.match(/\.(jpg|jpeg|png)$/i) ? (
-                          <img src={url} alt="event media" style={{ maxWidth: 120, marginRight: 8 }} />
+                          <img src={`/${url}`} alt="event media" style={{ maxWidth: 120, marginRight: 8 }} />
                         ) : url.match(/\.(mp4)$/i) ? (
-                          <video src={url} controls style={{ maxWidth: 120, marginRight: 8 }} />
+                          <video src={`/${url}`} controls style={{ maxWidth: 120, marginRight: 8 }} />
                         ) : (
-                          <a href={url} target="_blank" rel="noopener noreferrer">{url}</a>
+                          <a href={`/${url}`} target="_blank" rel="noopener noreferrer">{url}</a>
                         )}
                       </div>
                     ))}
@@ -426,84 +421,77 @@ const DeleteEventPage = () => {
               </Box>
               {/* Submit Button */}
               <Box sx={{ gridColumn: "span 3", textAlign: "right", mt: 2 }}>
-                <Button
-                  variant="contained"
-                  type="submit"
-                  sx={{
-                    backgroundColor: "#FF0004",
-                    color: "#fff",
-                    '&:hover': { backgroundColor: "#d90004" }
-                  }}
-                >
-                  Delete
+                <Button variant="contained" color="primary" type="submit">
+                  Update
                 </Button>
               </Box>
             </Box>
           </form>
+          {/* Result Dialog for success/error */}
+          <Dialog
+            open={resultDialogOpen}
+            onClose={() => {
+              setResultDialogOpen(false);
+              if (resultDialogType === "success") {
+                // Reset all fields on success
+                setEventType("");
+                setEventName("");
+                setVenue("");
+                setVenueAddress("");
+                setStartDate(null);
+                setStartTime(null);
+                setEndDate(null);
+                setEndTime(null);
+                setDuration("");
+                setEntranceFee("");
+                setContactNumber("");
+                setDescription("");
+                setSpecialGuests("");
+                setMedia([]);
+              }
+            }}
+            maxWidth="xs"
+            fullWidth
+          >
+            <DialogTitle>Status</DialogTitle>
+            <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {resultDialogType === "success" && (
+                <CheckCircleIcon sx={{ color: "#00C853", fontSize: 40 }} />
+              )}
+              {resultDialogType === "error" && (
+                <CancelIcon sx={{ color: "#FF1744", fontSize: 40 }} />
+              )}
+              <Typography>{resultDialogMsg}</Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => {
+                setResultDialogOpen(false);
+                if (resultDialogType === "success") {
+                  // Reset all fields on success
+                  setEventType("");
+                  setEventName("");
+                  setVenue("");
+                  setVenueAddress("");
+                  setStartDate(null);
+                  setStartTime(null);
+                  setEndDate(null);
+                  setEndTime(null);
+                  setDuration("");
+                  setEntranceFee("");
+                  setContactNumber("");
+                  setDescription("");
+                  setSpecialGuests("");
+                  setMedia([]);
+                }
+              }} autoFocus>
+                OK
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Box>
       </Box>
-      {/* Confirmation Dialog */}
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle sx={{ textAlign: "center" }}>
-          <WarningAmberIcon sx={{ color: "#FF9800", fontSize: 60 }} />
-        </DialogTitle>
-        <DialogContent>
-          <Typography variant="h6" sx={{ textAlign: "center" }}>
-            Are you sure you want to delete this event?
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ justifyContent: "center" }}>
-          <Button onClick={() => setConfirmOpen(false)} variant="outlined">
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmDelete}
-            variant="contained"
-            sx={{
-              backgroundColor: "#FF0004",
-              color: "#fff",
-              '&:hover': { backgroundColor: "#d90004" }
-            }}
-          >
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
-      {/* Result Dialog for success/error */}
-      <Dialog
-        open={resultDialogOpen}
-        onClose={() => {
-          setResultDialogOpen(false);
-          if (resultDialogType === "success") {
-            navigate("/viewevents");
-          }
-        }}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>Status</DialogTitle>
-        <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          {resultDialogType === "success" && (
-            <CheckCircleIcon sx={{ color: "#00C853", fontSize: 40 }} />
-          )}
-          {resultDialogType === "error" && (
-            <CancelIcon sx={{ color: "#FF1744", fontSize: 40 }} />
-          )}
-          <Typography>{resultDialogMsg}</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => {
-            setResultDialogOpen(false);
-            if (resultDialogType === "success") {
-              navigate("/viewevents");
-            }
-          }} autoFocus>
-            OK
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };
 
-export default DeleteEventPage;
+export default AdminUpdateEventsPage;
