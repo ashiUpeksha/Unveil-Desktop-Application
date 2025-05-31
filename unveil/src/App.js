@@ -18,6 +18,8 @@ import AdminEventUpdate from "./views/AdminEventUpdate/AdminEventUpdate";
 import UserRole from "./views/Roles/UserRole";
 import UpdateUser from "./views/Users/UpdateUser";
 import AdminAddNewEvent from "./views/AdminAddNewEvent/AdminAddNewEvent";
+import SignOut from "./views/SignOut/SignOut";
+import Profile from "./views/Profile/Profile";
 
 function App() {
   return (
@@ -40,6 +42,8 @@ function App() {
         <Route path="/admindeleteevent" element={<AdminDeleteEvent />} />
         <Route path="/admineventupdate" element={<AdminEventUpdate />} />
         <Route path="/adminaddnewevent" element={<AdminAddNewEvent />} />
+        <Route path="/signout" element={<SignOut />} />
+        <Route path="/profile" element={<Profile />} />
 
         <Route path="/userrole" element={<UserRole />} />
         <Route path="/updateuser" element={<UpdateUser />} />
