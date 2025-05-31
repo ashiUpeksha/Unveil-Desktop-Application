@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Formik } from "formik";
@@ -158,7 +159,7 @@ export default function LoginPage() {
               {/* Right Side */}
               <div style={rightSideStyle}>
                 <Typography variant="h3" gutterBottom>
-                  Login to your Account
+                  LOGIN TO YOUR ACCOUNT
                 </Typography>
 
                 <div style={{ marginBottom: '20px' }}>
