@@ -1,12 +1,12 @@
 import React from "react";
-import NavBar from "../../components/Navbar";
+import AdminNavbar from "../../components/AdminNavbar";
 import AdminSidebar from "../../components/AdminSidebar";
 import Box from "@mui/material/Box";
 
 const AdminDashBoard = () => {
   return (
     <div>
-      <NavBar />
+      <AdminNavbar />
       <div style={{ display: "flex" }}>
         <AdminSidebar />
         <div style={{ flex: 1 }}>

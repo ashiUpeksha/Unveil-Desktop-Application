@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import NavBar from "../../components/Navbar";
+import AdminNavbar from "../../components/AdminNavbar";
 import AdminDashBoardSidebar from "../../components/AdminSidebar";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -98,7 +98,7 @@ const AdminEventHandling = () => {
 
   return (
     <>
-      <NavBar />
+      <AdminNavbar />
       <Box sx={{ display: "flex" }}>
         <AdminDashBoardSidebar />
         <Box
