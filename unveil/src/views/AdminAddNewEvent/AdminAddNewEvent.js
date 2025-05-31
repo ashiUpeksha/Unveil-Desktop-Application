@@ -3,6 +3,8 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import AdminNavbar from '../../components/AdminNavbar';
+import AdminSidebar from '../../components/AdminSidebar';
 
 import {
   Box,
@@ -26,9 +28,6 @@ import {
   DateTimePicker
 } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-
-import Navbar from '../../components/Navbar';
-import Sidebar from '../../components/Sidebar';
 
 const validationSchema = Yup.object({
   eventType: Yup.string().required("Required"),
@@ -283,8 +282,8 @@ const AdminAddNewEventPage = () => {
 
   return (
     <Box sx={{ display: "flex" }}>
-      <Navbar />
-      <Sidebar />
+      <AdminNavbar />
+      <AdminSidebar />
       <Box component="main" sx={{ flexGrow: 1, backgroundColor: "#C6C6C6", p: 3, mt: 8, minHeight: "100vh" }}>
         <Box sx={{ backgroundColor: "white", p: 3, borderRadius: 2, boxShadow: 3 }}>
           <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Add New Event</Typography>
