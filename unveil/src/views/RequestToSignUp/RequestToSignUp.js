@@ -201,7 +201,7 @@ export default function TwoPartLayout() {
                 {/* Right Side */}
               {/* <Grid item xs={6}> */}
                 <Box sx={{ bgcolor: "#FDF8F8", height: "100%", p: 8 }}>
-                  <Typography variant="h3" gutterBottom>Request to Sign In</Typography>
+                  <Typography variant="h3" gutterBottom>SIGN UP</Typography>
 
                   {/* Organization Name */}
                   <Box sx={{ mb: 2 }}>
@@ -398,19 +398,20 @@ export default function TwoPartLayout() {
                     </Button>
                   </Box>
 
-                  <Typography textAlign="center" sx={{ mt: 4 }}>
+                  <Typography textAlign="center" sx={{ mt: 4, pb: '40px' }}>
                     Already have an account?{" "}
-                    <Link
-                      to="/"
-                      component="button"
-                      underline="hover"
+                    <Box
+                      component="span"
                       sx={{
                         color: "rgb(25, 118, 210)",
-                        background: "none",
-                        border: "none",
-                        padding: 0,
-                        font: "inherit",
-                        cursor: "pointer"
+                        cursor: "pointer",
+                        textDecoration: "none",
+                        transition: "text-decoration 0.2s",
+                        "&:hover": {
+                          textDecoration: "underline"
+                        },
+                        fontWeight: 500,
+                        display: "inline",
                       }}
                       onClick={e => {
                         e.preventDefault();
@@ -418,7 +419,7 @@ export default function TwoPartLayout() {
                       }}
                     >
                       Login to the account
-                    </Link>
+                    </Box>
                   </Typography>
 
                   <Dialog
