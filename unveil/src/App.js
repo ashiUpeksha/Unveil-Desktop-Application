@@ -20,6 +20,7 @@ import UpdateUser from "./views/Users/UpdateUser";
 import AdminAddNewEvent from "./views/AdminAddNewEvent/AdminAddNewEvent";
 import SignOut from "./views/SignOut/SignOut";
 import Profile from "./views/Profile/Profile";
+import SimpleWelcomePage from "./views/WelcomePage/SimpleWelcomePage";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
 
         <Route path="/userrole" element={<UserRole />} />
         <Route path="/updateuser" element={<UpdateUser />} />
+        <Route path="/SimpleWelcomePage" element={<SimpleWelcomePage />} />
 
       </Routes>
     </Router>
