@@ -40,9 +40,9 @@ const NavBar = () => {
   };
   const handleSignOut = () => {
     handleMenuClose();
-    // Clear user info and redirect to login
+    // Clear user info and redirect to SignOut page
     localStorage.removeItem("user");
-    navigate("/login");
+    navigate("/signout");
   };
 
   return (

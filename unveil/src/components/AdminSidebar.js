@@ -6,6 +6,7 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import PersonIcon from "@mui/icons-material/Person";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import { Link, useLocation } from "react-router-dom";
 
 const drawerWidth = 200; // Match Sidebar.js width
@@ -15,9 +16,9 @@ const AdminDashBoardSidebar = () => {
 
   const navItems = [
     {
-      label: "User Management",
-      icon: <PersonIcon sx={{ fontSize: 30, mb: 1 }} />,
-      path: "/usermanagement",
+      label: "Add New Event",
+      icon: <EventAvailableIcon sx={{ fontSize: 30, mb: 1 }} />,
+      path: "/adminaddnewevent",
     },
     {
       label: "Event Handling",

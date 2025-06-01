@@ -3,6 +3,8 @@ import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import AdminNavbar from '../../components/AdminNavbar';
+import AdminSidebar from '../../components/AdminSidebar';
 
 import {
   Box,
@@ -27,9 +29,6 @@ import {
 } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
-import Navbar from '../../components/Navbar';
-import Sidebar from '../../components/Sidebar';
-
 const validationSchema = Yup.object({
   eventType: Yup.string().required("Required"),
   eventName: Yup.string().required("Required"),
@@ -41,6 +40,7 @@ const validationSchema = Yup.object({
   contactNumber: Yup.string()
     .matches(/^[0-9]+$/, "Must be only digits")
     .required("Required"),
+  organizationName: Yup.string().required("Organization Name is required"), // <-- ensure required
   description: Yup.string().required("Required"),
   venueAddress: Yup.string().required("Event venue address is required"), 
 });
@@ -103,6 +103,7 @@ const AdminAddNewEventPage = () => {
       description: "",
       specialGuests: "",
       venueAddress: "", 
+      organizationName: "", // <-- ensure present
     },
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
@@ -121,36 +122,29 @@ const AdminAddNewEventPage = () => {
 
         setIsUploading(true);
 
+        // Prepare FormData for file upload and fields
         const formData = new FormData();
+        formData.append('eventType', values.eventType);
+        formData.append('eventName', values.eventName);
+        formData.append('venue', values.venue);
+        formData.append('startDateTime', values.startDateTime);
+        formData.append('endDateTime', values.endDateTime);
+        formData.append('duration', values.duration);
+        formData.append('entranceFee', values.entranceFee);
+        formData.append('contactNumber', values.contactNumber);
+        formData.append('description', values.description);
+        formData.append('specialGuests', values.specialGuests);
+        formData.append('venueAddress', values.venueAddress);
+        formData.append('organizationName', values.organizationName);
+        formData.append('latitude', lat);
+        formData.append('longitude', lng);
         selectedFiles.forEach((file) => {
           formData.append('UploadedFiles[]', file);
         });
 
-        // Debugging: Log FormData keys and values
-        /* for (let pair of formData.entries()) {
-          console.log(pair[0] + ':', pair[1]);
-        } */
-        console.log("FormData before submission:", formData.getAll('media'));
-        const model = {
-          eventType: values.eventType,
-          eventName: values.eventName,
-          venue: values.venue,
-          startDateTime: values.startDateTime,
-          endDateTime: values.endDateTime,
-          duration: values.duration,
-          entranceFee: values.entranceFee,
-          contactNumber: values.contactNumber,
-          description: values.description,
-          specialGuests: values.specialGuests,
-          UploadedFiles: selectedFiles,
-          venueAddress: values.venueAddress, 
-          latitude: lat, 
-          longitude: lng, 
-        };
-
         // Retrieve the token from localStorage
         const token = localStorage.authToken;
-        console.log("Retrieved token:", model); // Debugging: Log the token
+        // console.log("Retrieved token:", model); // Debugging: Log the token
 
         if (!token) {
           alert("Authorization token is missing. Please log in again.");
@@ -158,9 +152,10 @@ const AdminAddNewEventPage = () => {
           return;
         }
 
+        // Call the new API endpoint
         const response = await axios.post(
-          "http://localhost:3000/api/addNewEvent", 
-          model,
+          "http://localhost:3000/api/adminAddEventWithOrgCheck",
+          formData,
           {
             headers: {
               'Content-Type': 'multipart/form-data',
@@ -189,7 +184,16 @@ const AdminAddNewEventPage = () => {
           console.error("Server response:", error.response.data);
         }
 
-        if (error.response && error.response.status === 403) {
+        // Handle organization not registered error
+        if (
+          error.response &&
+          error.response.data &&
+          error.response.data.error === "This organization is not registered in the system yet."
+        ) {
+          setResultDialogMsg(error.response.data.error);
+          setResultDialogType("error");
+          setResultDialogOpen(true);
+        } else if (error.response && error.response.status === 403) {
           alert("You are not authorized to perform this action. Please log in again.");
         } else {
           setResultDialogMsg(
@@ -283,14 +287,14 @@ const AdminAddNewEventPage = () => {
 
   return (
     <Box sx={{ display: "flex" }}>
-      <Navbar />
-      <Sidebar />
+      <AdminNavbar />
+      <AdminSidebar />
       <Box component="main" sx={{ flexGrow: 1, backgroundColor: "#C6C6C6", p: 3, mt: 8, minHeight: "100vh" }}>
         <Box sx={{ backgroundColor: "white", p: 3, borderRadius: 2, boxShadow: 3 }}>
           <Typography variant="h4" sx={{ mb: 3, fontWeight: "bold" }}>Add New Event</Typography>
           <form onSubmit={formik.handleSubmit}>
             <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 2 }}>
-
+              {/* Event Type, Event Name, Venue */}
               {fields.slice(0, 3).map((field, index) => (
                 <Box key={index}>
                   <Typography variant="subtitle1">{field.label}</Typography>
@@ -360,6 +364,7 @@ const AdminAddNewEventPage = () => {
                 </Box>
               </LocalizationProvider>
 
+              {/* Duration */}
               <Box>
                 <Typography variant="subtitle1">Duration</Typography>
                 <input
@@ -409,8 +414,22 @@ const AdminAddNewEventPage = () => {
                 )}
               </Box>
 
-              {/* Empty box to fill the third column in this row */}
-              <Box />
+              {/* Organization Name after Contact Number */}
+              <Box>
+                <Typography variant="subtitle1">Organization Name</Typography>
+                <input
+                  type="text"
+                  name="organizationName"
+                  placeholder="Organization Name"
+                  value={formik.values.organizationName}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  style={inputStyle}
+                />
+                {formik.touched.organizationName && formik.errors.organizationName && (
+                  <div style={{ color: "red", fontSize: "0.8rem" }}>{formik.errors.organizationName}</div>
+                )}
+              </Box>
 
               {/* New row: Event Venue Address, Description, Special Guests */}
               <Box>
