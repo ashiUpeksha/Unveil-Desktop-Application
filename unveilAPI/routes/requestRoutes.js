@@ -462,4 +462,105 @@ router.put('/event/:eventId/status', async (req, res) => {
 });
 
 
+
+// NEW ENDPOINT: Get all events for ForYouPage (testing purposes)
+// This endpoint will fetch all events that are considered "active" or "published"
+// and orders them, perhaps by start date.
+
+router.get('/forYouEvents', async (req, res) => {
+  try {
+    const eventsQuery = `Select event_id, event_type, event_name, event_venue, event_venue_address,
+      event_start_date, event_start_time, event_end_date, event_end_time,event_duration, entrance_fee, contact_number,
+      description, special_guests, is_active, created_by, created_date,
+      (Select array_agg(images_and_videos) from eventimage where eventimage.event_id = addnewevent.event_id) as media_urls
+      FROM addnewevent
+      WHERE status = 2 AND is_active = true
+      ORDER BY event_start_date ASC, event_start_time ASC`;
+    const result = await pool.query(eventsQuery);
+
+    const events = result.rows.map(event => {
+      const formatDateTime = (date, time) => {
+        if (!date || !time) return null;
+        const datePart = new Date(date).toISOString().split('T')[0];
+        return `${datePart}T${time}`;
+      };
+
+      return {
+        id: event.event_id,
+        eventType: event.event_type,
+        eventName: event.event_name,
+        eventVenue: event.event_venue, 
+        eventVenueAddress: event.event_venue_address,
+        startDateTime: formatDateTime(event.event_start_date, event.event_start_time),
+        endDateTime: formatDateTime(event.event_end_date, event.event_end_time),
+        is_free: event.entrance_fee === null || parseFloat(event.entrance_fee === 0),
+        entranceFee: event.entrance_fee,
+        contactNumber: event.contact_number,
+        description: event.description,
+        specialGuests: event.special_guests,
+        image_url: event.media_urls && event.media_urls.length > 0 ? event.media_urls[0] : null,
+        all_media_urls: event.media_urls || [],
+      };
+    }); 
+    res.status(200).json(events);
+  } catch (error) { 
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+}
+);
+
+router.get('/eventDetails/:eventId', async (req, res) => {
+  const { eventId } = req.params;
+  
+  try {
+    const eventQuery = `
+      SELECT event_id, event_type, event_name, event_venue, event_venue_address,
+        event_start_date, event_start_time, event_end_date, event_end_time, event_duration, 
+        entrance_fee, contact_number, description, special_guests, is_active, created_by, created_date,
+        (SELECT array_agg(images_and_videos) FROM eventimage WHERE eventimage.event_id = addnewevent.event_id) as media_urls
+      FROM addnewevent
+      WHERE event_id = $1 AND status = 2 AND is_active = true`;
+    
+    const result = await pool.query(eventQuery, [eventId]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Event not found or not active" });
+    }
+    
+    const event = result.rows[0];
+    
+    const formatDateTime = (date, time) => {
+      if (!date || !time) return null;
+      const datePart = new Date(date).toISOString().split('T')[0];
+      return `${datePart}T${time}`;
+    };
+    
+    const formattedEvent = {
+      id: event.event_id,
+      eventType: event.event_type,
+      eventName: event.event_name,
+      eventVenue: event.event_venue,
+      eventVenueAddress: event.event_venue_address,
+      startDateTime: formatDateTime(event.event_start_date, event.event_start_time),
+      endDateTime: formatDateTime(event.event_end_date, event.event_end_time),
+      duration: event.event_duration,
+      is_free: event.entrance_fee === null || parseFloat(event.entrance_fee) === 0,
+      entranceFee: event.entrance_fee,
+      contactNumber: event.contact_number,
+      description: event.description,
+      specialGuests: event.special_guests,
+      image_url: event.media_urls && event.media_urls.length > 0 ? event.media_urls[0] : null,
+      all_media_urls: event.media_urls || [],
+      createdBy: event.created_by,
+      createdDate: event.created_date
+    };
+    
+    res.status(200).json(formattedEvent);
+  } catch (error) {
+    console.error('Error fetching event details:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 module.exports = router;

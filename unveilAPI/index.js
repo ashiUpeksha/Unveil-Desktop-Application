@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+app.use('/uploads', express.static('uploads'));
 
 // Multer setup
 const storage = multer.diskStorage({
@@ -33,6 +34,10 @@ app.post('/api/uploadMedia', upload.array('files'), (req, res) => {
 app.use('/api', requestRoutes);
 
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://localhost:${PORT}`);
+});
+
+app.get('/', (req, res) => {
+  res.send('Welcome to the Unveil API!');
 });
