@@ -236,7 +236,7 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
       );
 
       const eventId = result.rows[0].event_id;
-      const eventFolder = path.join(__dirname, '../../public/event_Image', eventId.toString());
+      const eventFolder = path.join(__dirname, '../uploads', eventId.toString());
 
       // Create event folder if it doesn't exist
       if (!fs.existsSync(eventFolder)) {
@@ -254,7 +254,7 @@ router.post('/addNewEvent', authenticateToken, (req, res) => {
           fs.renameSync(oldPath, newPath);
 
           // Store relative path in database
-          finalMediaUrls.push(`event_Image/${eventId}/${file.filename}`);
+          finalMediaUrls.push(`uploads/${eventId}/${file.filename}`);
         }
       }
 
