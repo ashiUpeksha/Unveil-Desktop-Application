@@ -32,6 +32,9 @@ app.post('/api/uploadMedia', upload.array('files'), (req, res) => {
 // Routes
 app.use('/api', requestRoutes);
 
+// Initialize the notification scheduler
+require('./cron/notificationScheduler');
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

@@ -1,0 +1,12 @@
+# Dependencies
+/node_modules
+/unveil/node_modules
+/unveilAPI/node_modules
+
+# Secrets
+.env
+unveilAPI/.env
+unveilAPI/config/*.json
+
+# Logs
+*.log
