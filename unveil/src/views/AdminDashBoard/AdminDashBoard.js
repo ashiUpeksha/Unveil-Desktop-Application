@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Typography, useTheme, useMediaQuery } from "@mui/material";
-import Navbar from '../../components/Navbar';
-import Sidebar from '../../components/Sidebar';
+import Navbar from '../../components/AdminNavbar';
+import AdminSidebar from '../../components/AdminSidebar';
 
 
 const SimpleWelcomePage = () => {
@@ -13,7 +13,7 @@ const SimpleWelcomePage = () => {
   return (
     <>
       <Navbar />
-      <Sidebar />
+      <AdminSidebar />
       <Box
         sx={{
           ml: { xs: 0, md: `${80 + 160}px` },
