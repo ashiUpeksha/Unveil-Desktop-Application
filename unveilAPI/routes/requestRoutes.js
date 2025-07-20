@@ -322,17 +322,27 @@ router.get('/event/:eventId', async (req, res) => {
       [eventId]
     );
     if (result.rows.length === 0) {
+      console.log(`Event with ID ${eventId} not found`);
       return res.status(404).json({ error: "Event not found" });
     }
-    // Optionally, fetch images/videos if needed:
+    // Fetch images/videos if needed:
     const mediaResult = await pool.query(
       'SELECT images_and_videos FROM eventimage WHERE event_id = $1',
       [eventId]
     );
     const event = result.rows[0];
-    event.media = mediaResult.rows.map(row => row.images_and_videos);
+    // Prefix each media path with the public directory
+    event.media = mediaResult.rows.map(row => 
+      path.join('C:/Users/aupek/Desktop/capstone2/Unveil-Desktop-Application/public', row.images_and_videos)
+    );
+
+    // Log the event and media before returning
+    console.log('Fetched event:', event);
+    console.log('Fetched media:', event.media);
+
     res.json(event);
   } catch (err) {
+    console.error('Error fetching event:', err);
     res.status(500).json({ error: "Failed to fetch event" });
   }
 });

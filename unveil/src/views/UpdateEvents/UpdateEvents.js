@@ -21,7 +21,7 @@ const inputStyle = {
   border: '1px solid #ccc',
   marginTop: '5px',
   boxSizing: 'border-box',
-};
+}
 
 const textareaStyle = {
   width: '100%',
@@ -54,6 +54,11 @@ const UpdateEventsPage = () => {
   const [specialGuests, setSpecialGuests] = useState("");
   const [media, setMedia] = useState([]);
 
+  // Log media data whenever it changes
+  useEffect(() => {
+    console.log("Media files:", media);
+  } );
+
   // Dialog state
   const [resultDialogOpen, setResultDialogOpen] = useState(false);
   const [resultDialogMsg, setResultDialogMsg] = useState("");
@@ -72,6 +77,7 @@ const UpdateEventsPage = () => {
       fetch(`http://localhost:3000/api/event/${eventId}`)
         .then(res => res.json())
         .then(data => {
+          console.log("Fetched event data:", data);
           setEventType(data.event_type || "");
           setEventName(data.event_name || "");
           setVenue(data.event_venue || "");
@@ -405,17 +411,41 @@ const UpdateEventsPage = () => {
                 {/* Optionally display media */}
                 {media && media.length > 0 && (
                   <Box sx={{ mt: 2 }}>
-                    {media.map((url, idx) => (
-                      <div key={idx}>
-                        {url.match(/\.(jpg|jpeg|png)$/i) ? (
-                          <img src={`/${url}`} alt="event media" style={{ maxWidth: 120, marginRight: 8 }} />
-                        ) : url.match(/\.(mp4)$/i) ? (
-                          <video src={`/${url}`} controls style={{ maxWidth: 120, marginRight: 8 }} />
-                        ) : (
-                          <a href={`/${url}`} target="_blank" rel="noopener noreferrer">{url}</a>
-                        )}
-                      </div>
-                    ))}
+                    {media.map((url, idx) => {
+                      // Always extract the path after 'public' and prepend '/'
+                      let publicUrl = url.replace(/\\/g, '/'); // Normalize slashes
+                      const publicIdx = publicUrl.indexOf('/public/');
+                      if (publicIdx !== -1) {
+                        publicUrl = publicUrl.substring(publicIdx + '/public'.length); // keep the slash before 'event_Image'
+                      }
+                      // Ensure leading slash
+                      if (!publicUrl.startsWith('/')) {
+                        publicUrl = '/' + publicUrl;
+                      }
+                      // Prepend backend server URL for correct loading
+                      const backendUrl = 'http://localhost:3000' + publicUrl;
+                      return (
+                        <div key={idx}>
+                          {/* Add onError handler to help debug image loading issues */}
+                          {publicUrl.match(/\.(jpg|jpeg|png)$/i) ? (
+                            <img
+                              src={publicUrl}
+                              alt="event media"
+                              style={{ maxWidth: 120, marginRight: 8 }}
+                              onError={e => {
+                                e.target.onerror = null;
+                                e.target.style.display = 'none';
+                                console.error('Image failed to load:', backendUrl);
+                              }}
+                            />
+                          ) : publicUrl.match(/\.(mp4)$/i) ? (
+                            <video src={backendUrl} controls style={{ maxWidth: 120, marginRight: 8 }} />
+                          ) : (
+                            <a href={backendUrl} target="_blank" rel="noopener noreferrer">{backendUrl}</a>
+                          )}
+                        </div>
+                      );
+                    })}
                   </Box>
                 )}
               </Box>
@@ -495,3 +525,6 @@ const UpdateEventsPage = () => {
 };
 
 export default UpdateEventsPage;
+
+              
+              
