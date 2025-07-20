@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Chip, Grid, Avatar, Divider, Stack } from '@mui/material';
+import { Box, Typography, Paper, Chip, Grid, Avatar, Divider, Stack, TextField, Button, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import BusinessIcon from '@mui/icons-material/Business';
 import EmailIcon from '@mui/icons-material/Email';
 import PhoneIcon from '@mui/icons-material/Phone';
@@ -21,6 +21,11 @@ function getUserId() {
 export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editMode, setEditMode] = useState(false);
+  const [editProfile, setEditProfile] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMsg, setDialogMsg] = useState("");
 
   useEffect(() => {
     const userId = getUserId();
@@ -33,6 +38,54 @@ export default function Profile() {
       })
       .catch(() => setLoading(false));
   }, []);
+
+  const handleEdit = () => {
+    setEditProfile({ ...profile });
+    setEditMode(true);
+  };
+
+  const handleCancel = () => {
+    setEditMode(false);
+    setEditProfile(null);
+  };
+
+  const handleChange = (field, value) => {
+    setEditProfile(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const userId = getUserId();
+      const res = await fetch(`http://localhost:3000/api/userProfile/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          organization_name: editProfile.organization_name,
+          contact_number: editProfile.contact_number,
+          email: editProfile.email,
+          address: editProfile.address,
+          description: editProfile.description,
+          username: editProfile.username
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setProfile(data.user);
+        setDialogMsg("Profile updated successfully!");
+        setDialogOpen(true);
+        setEditMode(false);
+        setEditProfile(null);
+      } else {
+        setDialogMsg(data.error || "Failed to update profile.");
+        setDialogOpen(true);
+      }
+    } catch (err) {
+      setDialogMsg("Failed to update profile.");
+      setDialogOpen(true);
+    }
+    setSaving(false);
+  };
 
   if (loading) return <Typography>Loading...</Typography>;
   if (!profile) return <Typography>No profile data found.</Typography>;
@@ -85,15 +138,25 @@ export default function Profile() {
             }}>
               <BusinessIcon sx={{ fontSize: 60 }} />
             </Avatar>
-            <Typography variant="h4" sx={{
-              fontWeight: 700,
-              background: 'linear-gradient(90deg, #FFD874, #FF407A)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              letterSpacing: '0.1em'
-            }}>
-              {profile.organization_name}
-            </Typography>
+            {editMode ? (
+              <TextField
+                label="Organization Name"
+                value={editProfile.organization_name}
+                onChange={e => handleChange("organization_name", e.target.value)}
+                fullWidth
+                sx={{ maxWidth: 350 }}
+              />
+            ) : (
+              <Typography variant="h4" sx={{
+                fontWeight: 700,
+                background: 'linear-gradient(90deg, #FFD874, #FF407A)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                letterSpacing: '0.1em'
+              }}>
+                {profile.organization_name}
+              </Typography>
+            )}
             <Typography variant="subtitle1" color="text.secondary">
               Event Organizer Profile
             </Typography>
@@ -112,21 +175,48 @@ export default function Profile() {
                         <PhoneIcon color="primary" />
                         <Typography variant="subtitle2" color="text.secondary">Contact Number:</Typography>
                       </Stack>
-                      <Typography sx={{ ml: 4, color: "#000", fontWeight: "bold" }}>{profile.contact_number}</Typography>
+                      {editMode ? (
+                        <TextField
+                          value={editProfile.contact_number}
+                          onChange={e => handleChange("contact_number", e.target.value)}
+                          size="small"
+                          fullWidth
+                        />
+                      ) : (
+                        <Typography sx={{ ml: 4, color: "#000", fontWeight: "bold" }}>{profile.contact_number}</Typography>
+                      )}
                     </td>
                     <td style={{ verticalAlign: 'top', width: '33%' }}>
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <EmailIcon color="primary" />
                         <Typography variant="subtitle2" color="text.secondary">Email:</Typography>
                       </Stack>
-                      <Typography sx={{ ml: 4, color: "#000", fontWeight: "bold" }}>{profile.email}</Typography>
+                      {editMode ? (
+                        <TextField
+                          value={editProfile.email}
+                          onChange={e => handleChange("email", e.target.value)}
+                          size="small"
+                          fullWidth
+                        />
+                      ) : (
+                        <Typography sx={{ ml: 4, color: "#000", fontWeight: "bold" }}>{profile.email}</Typography>
+                      )}
                     </td>
                     <td style={{ verticalAlign: 'top', width: '33%' }}>
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <PersonIcon color="primary" />
                         <Typography variant="subtitle2" color="text.secondary">Username:</Typography>
                       </Stack>
-                      <Typography sx={{ ml: 4, color: "#000", fontWeight: "bold" }}>{profile.username}</Typography>
+                      {editMode ? (
+                        <TextField
+                          value={editProfile.username}
+                          onChange={e => handleChange("username", e.target.value)}
+                          size="small"
+                          fullWidth
+                        />
+                      ) : (
+                        <Typography sx={{ ml: 4, color: "#000", fontWeight: "bold" }}>{profile.username}</Typography>
+                      )}
                     </td>
                   </tr>
                   <tr>
@@ -135,14 +225,34 @@ export default function Profile() {
                         <HomeIcon color="primary" />
                         <Typography variant="subtitle2" color="text.secondary">Address:</Typography>
                       </Stack>
-                      <Typography sx={{ ml: 4, color: "#000", fontWeight: "bold" }}>{profile.address}</Typography>
+                      {editMode ? (
+                        <TextField
+                          value={editProfile.address}
+                          onChange={e => handleChange("address", e.target.value)}
+                          size="small"
+                          fullWidth
+                        />
+                      ) : (
+                        <Typography sx={{ ml: 4, color: "#000", fontWeight: "bold" }}>{profile.address}</Typography>
+                      )}
                     </td>
                     <td style={{ verticalAlign: 'top', width: '33%' }} colSpan={2}>
                       <Stack direction="row" alignItems="center" spacing={1}>
                         <DescriptionIcon color="primary" />
                         <Typography variant="subtitle2" color="text.secondary">Description:</Typography>
                       </Stack>
-                      <Typography sx={{ ml: 4, color: "#000", fontWeight: "bold" }}>{profile.description}</Typography>
+                      {editMode ? (
+                        <TextField
+                          value={editProfile.description}
+                          onChange={e => handleChange("description", e.target.value)}
+                          size="small"
+                          fullWidth
+                          multiline
+                          minRows={2}
+                        />
+                      ) : (
+                        <Typography sx={{ ml: 4, color: "#000", fontWeight: "bold" }}>{profile.description}</Typography>
+                      )}
                     </td>
                   </tr>
                 </tbody>
@@ -161,7 +271,7 @@ export default function Profile() {
                     key={type.event_type_id}
                     style={{
                       marginBottom: 8,
-                      color: "inherit", // bullet uses default color
+                      color: "inherit",
                       fontWeight: 600,
                       fontSize: "1rem"
                     }}
@@ -174,24 +284,56 @@ export default function Profile() {
               <Typography color="text.secondary">No event types</Typography>
             )}
           </Box>
-          {/* Add Edit button at the end */}
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
-            <button
-              style={{
-                background: 'rgb(25, 118, 210)',
-                color: '#fff',
-                fontWeight: 'bold',
-                border: 'none',
-                borderRadius: 8,
-                padding: '10px 28px',
-                fontSize: '1rem',
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(25,118,210,0.12)'
-              }}
-            >
-              Edit
-            </button>
+          {/* Edit/Save/Cancel buttons */}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, gap: 2 }}>
+            {editMode ? (
+              <>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSave}
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save"}
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={handleCancel}
+                  disabled={saving}
+                >
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <button
+                style={{
+                  background: 'rgb(25, 118, 210)',
+                  color: '#fff',
+                  fontWeight: 'bold',
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '10px 28px',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(25,118,210,0.12)'
+                }}
+                onClick={handleEdit}
+              >
+                Edit
+              </button>
+            )}
           </Box>
+          {/* Dialog for result */}
+          <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
+            <DialogTitle>Status</DialogTitle>
+            <DialogContent>
+              <Typography>{dialogMsg}</Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setDialogOpen(false)}>OK</Button>
+            </DialogActions>
+          </Dialog>
         </Paper>
       </Box>
     </Box>
