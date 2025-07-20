@@ -1,7 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { Box, Typography, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  Dialog, 
+  DialogTitle, 
+  DialogContent, 
+  DialogActions,
+  IconButton,
+  CircularProgress
+} from "@mui/material";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
+import CloseIcon from '@mui/icons-material/Close';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DeleteIcon from '@mui/icons-material/Delete';
 import Navbar from '../../components/Navbar';
 import Sidebar from '../../components/Sidebar';
 import {
@@ -12,6 +25,7 @@ import {
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { useLocation } from "react-router-dom";
+import axios from 'axios';
 
 const inputStyle = {
   width: '100%',
@@ -53,6 +67,13 @@ const UpdateEventsPage = () => {
   const [description, setDescription] = useState("");
   const [specialGuests, setSpecialGuests] = useState("");
   const [media, setMedia] = useState([]);
+
+  // New states for image management
+  const [images, setImages] = useState([]);
+  const [openMediaDialog, setOpenMediaDialog] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Log media data whenever it changes
   useEffect(() => {
@@ -119,6 +140,129 @@ const UpdateEventsPage = () => {
         });
     }
   }, [eventId]);
+
+  // Fetch event images
+  useEffect(() => {
+    if (eventId) {
+      const fetchImages = async () => {
+        try {
+          const response = await axios.get(`http://localhost:3000/api/event/${eventId}/images`);
+          if (response.data.success) {
+            setImages(response.data.images);
+          }
+        } catch (error) {
+          console.error('Error fetching images:', error);
+        }
+      };
+      fetchImages();
+    }
+  }, [eventId]);
+
+  // Image management functions
+  const handleFileChange = (event) => {
+    const files = Array.from(event.target.files);
+    const validFiles = files.filter(file => {
+      const validTypes = ['image/jpeg', 'image/png', 'application/pdf', 'video/mp4'];
+      const isValidType = validTypes.includes(file.type);
+      const isValidSize = file.size <= 50 * 1024 * 1024; // 50MB
+      return isValidType && isValidSize;
+    });
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const handleRemoveFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleFileChange({ target: { files: e.dataTransfer.files } });
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDeleteImage = async (imageId) => {
+    if (!window.confirm('Are you sure you want to delete this image?')) return;
+
+    try {
+      const token = localStorage.authToken;
+      const response = await axios.delete(
+        `http://localhost:3000/api/event/${eventId}/image/${imageId}`,
+        {
+          headers: { 'Authorization': `Bearer ${token}` }
+        }
+      );
+
+      if (response.data.success) {
+        // Remove from local state
+        setImages(prev => prev.filter(img => img.id !== imageId));
+        setResultDialogMsg("Image deleted successfully!");
+        setResultDialogType("success");
+        setResultDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error);
+      setResultDialogMsg("Failed to delete image");
+      setResultDialogType("error");
+      setResultDialogOpen(true);
+    }
+  };
+
+  const handleUploadNewImages = async () => {
+    if (selectedFiles.length === 0) {
+      setOpenMediaDialog(false);
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const token = localStorage.authToken;
+      const formData = new FormData();
+      
+      selectedFiles.forEach((file) => {
+        formData.append('UploadedFiles[]', file);
+      });
+
+      const response = await axios.post(
+        `http://localhost:3000/api/event/${eventId}/images`,
+        formData,
+        {
+          headers: { 'Authorization': `Bearer ${token}` },
+          onUploadProgress: (progressEvent) => {
+            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(progress);
+          }
+        }
+      );
+
+      if (response.data.success) {
+        // Refresh images list
+        const imagesResponse = await axios.get(`http://localhost:3000/api/event/${eventId}/images`);
+        if (imagesResponse.data.success) {
+          setImages(imagesResponse.data.images);
+        }
+        
+        setSelectedFiles([]);
+        setOpenMediaDialog(false);
+        setResultDialogMsg("Images uploaded successfully!");
+        setResultDialogType("success");
+        setResultDialogOpen(true);
+      }
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      setResultDialogMsg("Failed to upload images");
+      setResultDialogType("error");
+      setResultDialogOpen(true);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
 
   // Helper to combine date and time into a single Date object
   const getCombinedDateTime = (date, time) => {
@@ -405,47 +549,98 @@ const UpdateEventsPage = () => {
               {/* Images and Videos Field */}
               <Box sx={{ gridColumn: { xs: "span 1", sm: "span 3" } }}>
                 <Typography variant="subtitle1">Images and Videos of the Event</Typography>
-                <Button variant="contained" color="primary">
-                  Show Media
-                </Button>
-                {/* Optionally display media */}
-                {media && media.length > 0 && (
+                <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                  <Button 
+                    variant="contained" 
+                    color="primary" 
+                    onClick={() => setOpenMediaDialog(true)}
+                    startIcon={<CloudUploadIcon />}
+                  >
+                    Add Media
+                  </Button>
+                </Box>
+                
+                {/* Display existing images */}
+                {images && images.length > 0 && (
                   <Box sx={{ mt: 2 }}>
-                    {media.map((url, idx) => {
-                      // Always extract the path after 'public' and prepend '/'
-                      let publicUrl = url.replace(/\\/g, '/'); // Normalize slashes
-                      const publicIdx = publicUrl.indexOf('/public/');
-                      if (publicIdx !== -1) {
-                        publicUrl = publicUrl.substring(publicIdx + '/public'.length); // keep the slash before 'event_Image'
-                      }
-                      // Ensure leading slash
-                      if (!publicUrl.startsWith('/')) {
-                        publicUrl = '/' + publicUrl;
-                      }
-                      // Prepend backend server URL for correct loading
-                      const backendUrl = 'http://localhost:3000' + publicUrl;
-                      return (
-                        <div key={idx}>
-                          {/* Add onError handler to help debug image loading issues */}
-                          {publicUrl.match(/\.(jpg|jpeg|png)$/i) ? (
+                    <Typography variant="subtitle2" gutterBottom>Current Images:</Typography>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexWrap: 'wrap', 
+                      gap: 2,
+                      maxHeight: '300px',
+                      overflow: 'auto',
+                      border: '1px solid #eee',
+                      borderRadius: '4px',
+                      p: 2
+                    }}>
+                      {images.map((image) => (
+                        <Box 
+                          key={image.id} 
+                          sx={{ 
+                            position: 'relative',
+                            border: '1px solid #ddd',
+                            borderRadius: '4px',
+                            overflow: 'hidden'
+                          }}
+                        >
+                          {image.path && image.path.match(/\.(jpg|jpeg|png)$/i) ? (
                             <img
-                              src={publicUrl}
+                              src={image.url}
                               alt="event media"
-                              style={{ maxWidth: 120, marginRight: 8 }}
+                              style={{ 
+                                width: '120px', 
+                                height: '120px', 
+                                objectFit: 'cover',
+                                display: 'block'
+                              }}
                               onError={e => {
-                                e.target.onerror = null;
+                                console.error('Image failed to load:', image.url);
                                 e.target.style.display = 'none';
-                                console.error('Image failed to load:', backendUrl);
                               }}
                             />
-                          ) : publicUrl.match(/\.(mp4)$/i) ? (
-                            <video src={backendUrl} controls style={{ maxWidth: 120, marginRight: 8 }} />
+                          ) : image.path && image.path.match(/\.(mp4)$/i) ? (
+                            <video 
+                              src={image.url} 
+                              controls 
+                              style={{ 
+                                width: '120px', 
+                                height: '120px', 
+                                objectFit: 'cover'
+                              }} 
+                            />
                           ) : (
-                            <a href={backendUrl} target="_blank" rel="noopener noreferrer">{backendUrl}</a>
+                            <Box sx={{ 
+                              width: '120px', 
+                              height: '120px', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              backgroundColor: '#f5f5f5'
+                            }}>
+                              <Typography variant="caption">File</Typography>
+                            </Box>
                           )}
-                        </div>
-                      );
-                    })}
+                          <IconButton
+                            sx={{
+                              position: 'absolute',
+                              top: 4,
+                              right: 4,
+                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                              '&:hover': {
+                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                              },
+                              padding: '4px'
+                            }}
+                            size="small"
+                            onClick={() => handleDeleteImage(image.id)}
+                            color="error"
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
                   </Box>
                 )}
               </Box>
@@ -457,6 +652,139 @@ const UpdateEventsPage = () => {
               </Box>
             </Box>
           </form>
+
+          {/* Media Upload Dialog */}
+          <Dialog 
+            open={openMediaDialog} 
+            onClose={() => setOpenMediaDialog(false)}
+            maxWidth="sm"
+            fullWidth
+          >
+            <DialogTitle>
+              Add Images and Videos to Event
+              <IconButton
+                aria-label="close"
+                onClick={() => setOpenMediaDialog(false)}
+                sx={{
+                  position: 'absolute',
+                  right: 8,
+                  top: 8,
+                  color: (theme) => theme.palette.grey[500],
+                }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent>
+              <Box
+                sx={{
+                  border: '2px dashed #ccc',
+                  borderRadius: '4px',
+                  p: 4,
+                  textAlign: 'center',
+                  mb: 2,
+                  backgroundColor: '#f9f9f9',
+                  '&:hover': {
+                    backgroundColor: '#f0f0f0',
+                  }
+                }}
+                onDrop={handleDrop}
+                onDragOver={handleDragOver}
+              >
+                <CloudUploadIcon sx={{ fontSize: 48, color: '#1976d2', mb: 1 }} />
+                <Typography variant="h6" gutterBottom>
+                  Drag & Drop files here
+                </Typography>
+                <Typography variant="body1" gutterBottom>
+                  or
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  component="label"
+                  sx={{ mt: 1 }}
+                >
+                  Browse Files
+                  <input 
+                    type="file" 
+                    hidden 
+                    multiple 
+                    onChange={handleFileChange}
+                    accept=".jpeg,.jpg,.png,.pdf,.mp4"
+                  />
+                </Button>
+                <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 2 }}>
+                  Supported formats: JPEG, PNG, PDF, MP4 (Max 50MB each)
+                </Typography>
+              </Box>
+
+              {/* Selected files preview */}
+              {selectedFiles.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="subtitle2" gutterBottom>Selected Files:</Typography>
+                  <Box sx={{ maxHeight: '200px', overflow: 'auto', border: '1px solid #eee', borderRadius: '4px' }}>
+                    {selectedFiles.map((file, index) => (
+                      <Box 
+                        key={index} 
+                        sx={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          p: 1.5,
+                          borderBottom: '1px solid #eee',
+                          '&:last-child': {
+                            borderBottom: 'none'
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', overflow: 'hidden' }}>
+                          <Typography 
+                            variant="body2" 
+                            sx={{ 
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              maxWidth: '300px'
+                            }}
+                          >
+                            {file.name}
+                          </Typography>
+                          <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>
+                            ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                          </Typography>
+                        </Box>
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleRemoveFile(index)}
+                          color="error"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setOpenMediaDialog(false)}>Cancel</Button>
+              <Button 
+                onClick={handleUploadNewImages}
+                color="primary"
+                variant="contained"
+                disabled={selectedFiles.length === 0 || isUploading}
+              >
+                {isUploading ? (
+                  <>
+                    <CircularProgress size={24} sx={{ color: 'white', mr: 1 }} />
+                    Uploading ({uploadProgress}%)
+                  </>
+                ) : (
+                  `Upload ${selectedFiles.length} file(s)`
+                )}
+              </Button>
+            </DialogActions>
+          </Dialog>
+
           {/* Result Dialog for success/error */}
           <Dialog
             open={resultDialogOpen}
@@ -478,6 +806,8 @@ const UpdateEventsPage = () => {
                 setDescription("");
                 setSpecialGuests("");
                 setMedia([]);
+                setImages([]);
+                setSelectedFiles([]);
               }
             }}
             maxWidth="xs"
@@ -512,6 +842,8 @@ const UpdateEventsPage = () => {
                   setDescription("");
                   setSpecialGuests("");
                   setMedia([]);
+                  setImages([]);
+                  setSelectedFiles([]);
                 }
               }} autoFocus>
                 OK

@@ -889,4 +889,134 @@ router.put('/userProfile/:userId', async (req, res) => {
   }
 });
 
+// Delete specific image from event
+router.delete('/event/:eventId/image/:imageId', authenticateToken, async (req, res) => {
+  const { eventId, imageId } = req.params;
+  const userId = req.user.userId;
+
+  try {
+    // Get the image path first
+    const imageResult = await pool.query(
+      'SELECT images_and_videos FROM eventimage WHERE event_image_id = $1 AND event_id = $2',
+      [imageId, eventId]
+    );
+
+    if (imageResult.rows.length === 0) {
+      return res.status(404).json({ error: "Image not found" });
+    }
+
+    const imagePath = imageResult.rows[0].images_and_videos;
+
+    // Delete from database
+    await pool.query(
+      'DELETE FROM eventimage WHERE event_image_id = $1 AND event_id = $2',
+      [imageId, eventId]
+    );
+
+    // Try to delete physical file
+    try {
+      const fullPath = path.join(__dirname, '../', imagePath);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+      }
+    } catch (fileErr) {
+      console.log('Could not delete physical file:', fileErr.message);
+    }
+
+    res.json({ success: true, message: "Image deleted successfully" });
+  } catch (error) {
+    console.error('Error deleting image:', error);
+    res.status(500).json({ error: "Failed to delete image" });
+  }
+});
+
+// Add new images to existing event
+router.post('/event/:eventId/images', authenticateToken, (req, res) => {
+  const { eventId } = req.params;
+  const userId = req.user.userId;
+
+  upload(req, res, async function (err) {
+    if (err) {
+      console.error('Upload error:', err);
+      return res.status(400).json({ error: err.message });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files were uploaded' });
+    }
+
+    try {
+      // Check if event exists and belongs to user
+      const eventCheck = await pool.query(
+        'SELECT event_id FROM addnewevent WHERE event_id = $1 AND created_by = $2',
+        [eventId, userId]
+      );
+
+      if (eventCheck.rows.length === 0) {
+        return res.status(403).json({ error: "Event not found or access denied" });
+      }
+
+      const eventFolder = path.join(__dirname, '../uploads', eventId.toString());
+
+      // Create event folder if it doesn't exist
+      if (!fs.existsSync(eventFolder)) {
+        fs.mkdirSync(eventFolder, { recursive: true });
+      }
+
+      // Process uploaded files
+      const newImageIds = [];
+      for (const file of req.files) {
+        const oldPath = file.path;
+        const newPath = path.join(eventFolder, file.filename);
+
+        // Move file from temp to event folder
+        fs.renameSync(oldPath, newPath);
+
+        // Store in database
+        const mediaUrl = `uploads/${eventId}/${file.filename}`;
+        const insertResult = await pool.query(
+          'INSERT INTO eventimage (event_id, images_and_videos, created_by) VALUES ($1, $2, $3) RETURNING event_image_id',
+          [eventId, mediaUrl, userId]
+        );
+
+        newImageIds.push(insertResult.rows[0].event_image_id);
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Images uploaded successfully",
+        imageIds: newImageIds
+      });
+
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      res.status(500).json({ error: "Failed to upload images" });
+    }
+  });
+});
+
+// Get event images with IDs
+router.get('/event/:eventId/images', async (req, res) => {
+  const { eventId } = req.params;
+
+  try {
+    const result = await pool.query(
+      'SELECT event_image_id, images_and_videos FROM eventimage WHERE event_id = $1 AND is_active = true',
+      [eventId]
+    );
+
+    res.json({ 
+      success: true, 
+      images: result.rows.map(row => ({
+        id: row.event_image_id,
+        path: row.images_and_videos,
+        url: `http://localhost:3000/${row.images_and_videos}`
+      }))
+    });
+  } catch (error) {
+    console.error('Error fetching event images:', error);
+    res.status(500).json({ error: "Failed to fetch images" });
+  }
+});
+
 module.exports = router;

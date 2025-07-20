@@ -121,36 +121,38 @@ const AddNewEventPage = () => {
 
         setIsUploading(true);
 
+        // Create FormData and append all form fields and files
         const formData = new FormData();
+        
+        // Append form fields
+        formData.append('eventType', values.eventType);
+        formData.append('eventName', values.eventName);
+        formData.append('venue', values.venue);
+        formData.append('startDateTime', values.startDateTime);
+        formData.append('endDateTime', values.endDateTime);
+        formData.append('duration', values.duration);
+        formData.append('entranceFee', values.entranceFee);
+        formData.append('contactNumber', values.contactNumber);
+        formData.append('description', values.description);
+        formData.append('specialGuests', values.specialGuests);
+        formData.append('venueAddress', values.venueAddress);
+        formData.append('latitude', lat);
+        formData.append('longitude', lng);
+        
+        // Append files
         selectedFiles.forEach((file) => {
           formData.append('UploadedFiles[]', file);
         });
 
         // Debugging: Log FormData keys and values
-        /* for (let pair of formData.entries()) {
+        console.log("FormData before submission - files count:", selectedFiles.length);
+        for (let pair of formData.entries()) {
           console.log(pair[0] + ':', pair[1]);
-        } */
-        console.log("FormData before submission:", formData.getAll('media'));
-        const model = {
-          eventType: values.eventType,
-          eventName: values.eventName,
-          venue: values.venue,
-          startDateTime: values.startDateTime,
-          endDateTime: values.endDateTime,
-          duration: values.duration,
-          entranceFee: values.entranceFee,
-          contactNumber: values.contactNumber,
-          description: values.description,
-          specialGuests: values.specialGuests,
-          UploadedFiles: selectedFiles,
-          venueAddress: values.venueAddress, 
-          latitude: lat, 
-          longitude: lng, 
-        };
+        }
 
         // Retrieve the token from localStorage
         const token = localStorage.authToken;
-        console.log("Retrieved token:", model); // Debugging: Log the token
+        console.log("Retrieved token for auth"); // Debugging: Log the token
 
         if (!token) {
           alert("Authorization token is missing. Please log in again.");
@@ -160,10 +162,9 @@ const AddNewEventPage = () => {
 
         const response = await axios.post(
           "http://localhost:3000/api/addNewEvent", 
-          model,
+          formData,
           {
             headers: {
-              'Content-Type': 'multipart/form-data',
               'Authorization': `Bearer ${token}`
             },
             onUploadProgress: (progressEvent) => {
