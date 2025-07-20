@@ -847,4 +847,46 @@ router.get('/eventDetails/:eventId', async (req, res) => {
   }
 });
 
+// Update user profile info
+router.put('/userProfile/:userId', async (req, res) => {
+  const { userId } = req.params;
+  const {
+    organization_name,
+    contact_number,
+    email,
+    address,
+    description,
+    username
+  } = req.body;
+
+  try {
+    const result = await pool.query(
+      `UPDATE users SET
+        organization_name = $1,
+        contact_number = $2,
+        email = $3,
+        address = $4,
+        description = $5,
+        username = $6
+      WHERE user_id = $7
+      RETURNING user_id, organization_name, contact_number, email, address, description, username`,
+      [
+        organization_name,
+        contact_number,
+        email,
+        address,
+        description,
+        username,
+        userId
+      ]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+    res.json({ success: true, user: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, error: "Failed to update profile" });
+  }
+});
+
 module.exports = router;
