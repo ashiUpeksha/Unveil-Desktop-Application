@@ -253,7 +253,278 @@ const UpdateEventsPage = () => {
                   onChange={e => setEventName(e.target.value)}
                 />
               </Box>
+              {/* Venue */}
+              <Box>
+                <Typography variant="subtitle1">Venue</Typography>
+                <input
+                  type="text"
+                  name="venue"
+                  placeholder="Venue"
+                  style={inputStyle}
+                  value={venue}
+                  onChange={e => setVenue(e.target.value)}
+                />
+              </Box>
+              {/* Start Date and Time */}
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Box>
+                  <Typography variant="subtitle1">Start Date</Typography>
+                  <DateTimePicker
+                    value={startDate}
+                    onChange={setStartDate}
+                    views={['year', 'month', 'day']}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        placeholder: "MM/DD/YYYY",
+                        size: "medium",
+                      },
+                    }}
+                  />
+                </Box>
+                <Box>
+                  <Typography variant="subtitle1">Start Time</Typography>
+                  <TimePicker
+                    value={startTime}
+                    onChange={setStartTime}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        placeholder: "hh:mm aa",
+                        size: "medium",
+                      },
+                    }}
+                  />
+                </Box>
+                {/* End Date and Time */}
+                <Box>
+                  <Typography variant="subtitle1">End Date</Typography>
+                  <DateTimePicker
+                    value={endDate}
+                    onChange={setEndDate}
+                    views={['year', 'month', 'day']}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        placeholder: "MM/DD/YYYY",
+                        size: "medium",
+                      },
+                    }}
+                  />
+                </Box>
+                <Box>
+                  <Typography variant="subtitle1">End Time</Typography>
+                  <TimePicker
+                    value={endTime}
+                    onChange={setEndTime}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        placeholder: "hh:mm aa",
+                        size: "medium",
+                      },
+                    }}
+                  />
+                </Box>
+              </LocalizationProvider>
+              {/* Duration */}
+              <Box>
+                <Typography variant="subtitle1">Duration</Typography>
+                <input
+                  type="text"
+                  name="duration"
+                  placeholder="Duration"
+                  style={{ ...inputStyle, backgroundColor: "#f0f0f0", cursor: "not-allowed" }}
+                  readOnly
+                  value={
+                    eventStartDateTime && eventEndDateTime
+                      ? getDurationString(eventStartDateTime, eventEndDateTime)
+                      : duration
+                  }
+                />
+              </Box>
+              {/* Entrance Fee */}
+              <Box>
+                <Typography variant="subtitle1">Entrance Fee</Typography>
+                <input
+                  type="text"
+                  name="entranceFee"
+                  placeholder="Entrance Fee"
+                  style={inputStyle}
+                  value={entranceFee}
+                  onChange={e => setEntranceFee(e.target.value)}
+                />
+              </Box>
+              {/* Contact Number */}
+              <Box>
+                <Typography variant="subtitle1">Contact Number</Typography>
+                <input
+                  type="text"
+                  name="contactNumber"
+                  placeholder="Contact Number"
+                  style={inputStyle}
+                  value={contactNumber}
+                  onChange={e => setContactNumber(e.target.value)}
+                />
+              </Box>
+              {/* Empty box to fill the next column */}
+              <Box />
+              {/* Empty box to fill the next column */}
+              <Box />
+              {/* Event Venue Address, Description, Special Guests in the same row */}
+              <Box>
+                <Typography variant="subtitle1">Event Venue Address</Typography>
+                <textarea
+                  name="venueAddress"
+                  placeholder="Address of the event venue"
+                  style={textareaStyle}
+                  value={venueAddress}
+                  onChange={e => setVenueAddress(e.target.value)}
+                />
+              </Box>
+              <Box>
+                <Typography variant="subtitle1">Description</Typography>
+                <textarea
+                  name="description"
+                  placeholder="Description"
+                  style={textareaStyle}
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                />
+              </Box>
+              <Box>
+                <Typography variant="subtitle1">Special Guests</Typography>
+                <textarea
+                  name="specialGuests"
+                  placeholder="Special Guests"
+                  style={textareaStyle}
+                  value={specialGuests}
+                  onChange={e => setSpecialGuests(e.target.value)}
+                />
+              </Box>
+              {/* Images and Videos Field */}
+              <Box sx={{ gridColumn: { xs: "span 1", sm: "span 3" } }}>
+                <Typography variant="subtitle1">Images and Videos of the Event</Typography>
+                <Button variant="contained" color="primary">
+                  Show Media
+                </Button>
+                {/* Optionally display media */}
+                {media && media.length > 0 && (
+                  <Box sx={{ mt: 2 }}>
+                    {media.map((url, idx) => {
+                      // Always extract the path after 'public' and prepend '/'
+                      let publicUrl = url.replace(/\\/g, '/'); // Normalize slashes
+                      const publicIdx = publicUrl.indexOf('/public/');
+                      if (publicIdx !== -1) {
+                        publicUrl = publicUrl.substring(publicIdx + '/public'.length); // keep the slash before 'event_Image'
+                      }
+                      // Ensure leading slash
+                      if (!publicUrl.startsWith('/')) {
+                        publicUrl = '/' + publicUrl;
+                      }
+                      // Prepend backend server URL for correct loading
+                      const backendUrl = 'http://localhost:3000' + publicUrl;
+                      return (
+                        <div key={idx}>
+                          {/* Add onError handler to help debug image loading issues */}
+                          {publicUrl.match(/\.(jpg|jpeg|png)$/i) ? (
+                            <img
+                              src={publicUrl}
+                              alt="event media"
+                              style={{ maxWidth: 120, marginRight: 8 }}
+                              onError={e => {
+                                e.target.onerror = null;
+                                e.target.style.display = 'none';
+                                console.error('Image failed to load:', backendUrl);
+                              }}
+                            />
+                          ) : publicUrl.match(/\.(mp4)$/i) ? (
+                            <video src={backendUrl} controls style={{ maxWidth: 120, marginRight: 8 }} />
+                          ) : (
+                            <a href={backendUrl} target="_blank" rel="noopener noreferrer">{backendUrl}</a>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </Box>
+                )}
+              </Box>
+              {/* Submit Button */}
+              <Box sx={{ gridColumn: "span 3", textAlign: "right", mt: 2 }}>
+                <Button variant="contained" color="primary" type="submit">
+                  Update
+                </Button>
+              </Box>
+            </Box>
+          </form>
+          {/* Result Dialog for success/error */}
+          <Dialog
+            open={resultDialogOpen}
+            onClose={() => {
+              setResultDialogOpen(false);
+              if (resultDialogType === "success") {
+                // Reset all fields on success
+                setEventType("");
+                setEventName("");
+                setVenue("");
+                setVenueAddress("");
+                setStartDate(null);
+                setStartTime(null);
+                setEndDate(null);
+                setEndTime(null);
+                setDuration("");
+                setEntranceFee("");
+                setContactNumber("");
+                setDescription("");
+                setSpecialGuests("");
+                setMedia([]);
+              }
+            }}
+            maxWidth="xs"
+            fullWidth
+          >
+            <DialogTitle>Status</DialogTitle>
+            <DialogContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              {resultDialogType === "success" && (
+                <CheckCircleIcon sx={{ color: "#00C853", fontSize: 40 }} />
+              )}
+              {resultDialogType === "error" && (
+                <CancelIcon sx={{ color: "#FF1744", fontSize: 40 }} />
+              )}
+              <Typography>{resultDialogMsg}</Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => {
+                setResultDialogOpen(false);
+                if (resultDialogType === "success") {
+                  // Reset all fields on success
+                  setEventType("");
+                  setEventName("");
+                  setVenue("");
+                  setVenueAddress("");
+                  setStartDate(null);
+                  setStartTime(null);
+                  setEndDate(null);
+                  setEndTime(null);
+                  setDuration("");
+                  setEntranceFee("");
+                  setContactNumber("");
+                  setDescription("");
+                  setSpecialGuests("");
+                  setMedia([]);
+                }
+              }} autoFocus>
+                OK
+              </Button>
+            </DialogActions>
+          </Dialog>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
 
+export default UpdateEventsPage;
 
               
               
