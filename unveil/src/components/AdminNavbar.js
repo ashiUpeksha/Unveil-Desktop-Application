@@ -3,7 +3,7 @@ import AppBar from "@mui/material/AppBar";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useEffect } from "react";
 
@@ -11,12 +11,13 @@ const NavBar = () => {
   // Get user info from localStorage
   const [organization, setOrganization] = React.useState("");
   const [username, setUsername] = React.useState("");
+  const navigate = useNavigate();
+
   useEffect(() => {
     // Parse localStorage.user as JSON
-      const userObj = JSON.parse(localStorage.user || "{}");
-      setOrganization(userObj.organization || "");
-      setUsername(userObj.username || "");
-    
+    const userObj = JSON.parse(localStorage.user || "{}");
+    setOrganization(userObj.organization || "");
+    setUsername(userObj.username || "");
   }, []);
 
   return (
@@ -67,6 +68,27 @@ const NavBar = () => {
             </Typography>
           </Box>
           <AccountCircleIcon sx={{ color: "#fff", fontSize: 30 }} />
+          {/* Sign Out Button */}
+          <Box
+            sx={{
+              ml: 2,
+              cursor: "pointer",
+              color: "#fff",
+              fontWeight: "bold",
+              fontSize: "1rem",
+              px: 2,
+              py: 0.5,
+              borderRadius: 2,
+              background: "#FF407A",
+              "&:hover": {
+                background: "#FFD874",
+                color: "#222",
+              },
+            }}
+            onClick={() => navigate("/signout")}
+          >
+            Sign Out
+          </Box>
         </Box>
       </Toolbar>
     </AppBar>
